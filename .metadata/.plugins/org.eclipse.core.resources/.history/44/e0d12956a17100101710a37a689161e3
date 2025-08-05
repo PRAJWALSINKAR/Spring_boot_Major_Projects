@@ -1,0 +1,50 @@
+package prajwal.in.service;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+
+import prajwal.in.dto.LoginRequest;
+import prajwal.in.entity.Admin;
+import prajwal.in.repo.AdminRepo;
+
+@Service
+public class AdminServiceImpl implements AdminService {
+
+    private final AdminRepo adminRepo;
+
+    public AdminServiceImpl(AdminRepo adminRepo) {
+        this.adminRepo = adminRepo;
+    }
+
+    @Override
+    public Admin createAdmin(Admin admin) {
+        // Store password as plain text (for debugging only)
+        return adminRepo.save(admin);
+    }
+
+    @Override
+    public ResponseEntity<Map<String, String>> login(LoginRequest request) {
+        Optional<Admin> optional = adminRepo.findByEmail(request.getEmail());
+        if (optional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid credentials: email not found"));
+        }
+        Admin admin = optional.get();
+
+        if (!request.getPassword().equals(admin.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid credentials: wrong password"));
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Login successful"));
+    }
+
+    @Override
+    public List<Admin> findAll() {
+        return adminRepo.findAll();
+    }
+}

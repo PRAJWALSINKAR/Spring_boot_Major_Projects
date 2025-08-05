@@ -1,0 +1,42 @@
+package prajwal.in.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                // 🔓 Public pages
+                .requestMatchers("/", "/login", "/logout", "/css/**", "/js/**", "/images/**", "/reset-password/**").permitAll()
+
+                // 🧑‍⚖️ Admin-only pages
+                .requestMatchers("/dashboard", "/api/**", "/caseworker/register-form", "/caseworker/save").hasAuthority("ADMIN")
+
+                // Optional: 👨‍💼 Caseworker access (if you want different behavior later)
+                // .requestMatchers("/caseworker/**").hasAuthority("CASEWORKER")
+
+                // ❌ Block all other endpoints
+                .anyRequest().denyAll()
+            )
+            .formLogin(form -> form.disable())
+            .httpBasic(httpBasic -> httpBasic.disable())
+            .logout(logout -> logout.disable());
+
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        // ⚠️ For development only. Use BCryptPasswordEncoder in production.
+        return NoOpPasswordEncoder.getInstance();
+    }
+}

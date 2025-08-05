@@ -1,0 +1,34 @@
+package prajwal.in.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity and no 403 on POST
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/login", "/logout", "/css/**", "/js/**", "/images/**").permitAll() // Allow login & static files publicly
+                .requestMatchers("/dashboard", "/api/**").authenticated()  // Protect these paths
+                .anyRequest().denyAll()
+            )
+            .formLogin(form -> form.disable())     // Disable default Spring Security login page
+            .httpBasic(httpBasic -> httpBasic.disable())  // Disable browser popup auth
+            .logout(logout -> logout.disable());   // Disable Spring Security logout handling
+
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        // Plain text passwords (for testing only!)
+        return NoOpPasswordEncoder.getInstance();
+    }
+}

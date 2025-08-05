@@ -1,0 +1,70 @@
+package prajwal.in.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpSession;
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.entity.Admin;
+import prajwal.in.service.AdminService;
+import prajwal.in.service.CaseWorkerService;
+import prajwal.in.service.ApplicationService;
+
+@Controller
+public class DashboardController {
+
+    @Autowired
+    private AdminService adminService;
+
+    @Autowired
+    private CaseWorkerService caseWorkerService;
+
+    @Autowired
+    private ApplicationService applicationService;
+
+    @GetMapping("/dashboard")
+    public String dashboard(Model model, HttpSession session) {
+        String email = (String) session.getAttribute("email");
+        if (email == null) {
+            return "redirect:/";
+        }
+
+        Admin admin = adminService.findByEmail(email).orElse(null);
+        CaseWorker caseWorker = caseWorkerService.findByEmail(email).orElse(null);
+
+        boolean isAdmin = admin != null;
+        model.addAttribute("isAdmin", isAdmin);
+        model.addAttribute("userName", isAdmin ? admin.getName() : caseWorker.getName());
+
+        // Dashboard Stats
+        Map<String, Object> stats = applicationService.getDashboardStats();
+        model.addAttribute("planCount", stats.get("planCount"));
+        model.addAttribute("citizensApproved", stats.get("citizensApproved"));
+        model.addAttribute("citizensDenied", stats.get("citizensDenied"));
+        model.addAttribute("benefitsGiven", stats.get("benefitsGiven"));
+
+        return "dashboard";
+    }
+
+    @GetMapping("/api/applications")
+    @ResponseBody
+    public List<Object> getApplications(HttpSession session) {
+        String email = (String) session.getAttribute("email");
+
+        Admin admin = adminService.findByEmail(email).orElse(null);
+        if (admin != null) {
+            return applicationService.findAllApplications();
+        } else {
+            CaseWorker caseWorker = caseWorkerService.findByEmail(email).orElse(null);
+            if (caseWorker != null) {
+                return applicationService.findApplicationsByCaseWorkerId(caseWorker.getId());
+            }
+        }
+        return List.of();
+    }
+}

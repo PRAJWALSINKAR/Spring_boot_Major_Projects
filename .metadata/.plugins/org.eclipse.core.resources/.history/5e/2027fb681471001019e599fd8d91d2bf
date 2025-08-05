@@ -1,0 +1,5 @@
+package prajwal.in.dto;
+
+public class LoginRequest {
+
+}

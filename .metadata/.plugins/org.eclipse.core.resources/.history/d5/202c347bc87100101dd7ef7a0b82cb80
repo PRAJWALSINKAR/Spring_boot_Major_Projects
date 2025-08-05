@@ -1,0 +1,43 @@
+package prajwal.in.controller;
+
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.ui.Model;
+import prajwal.in.entity.Admin;
+import prajwal.in.repo.AdminRepo;
+
+@Controller
+public class LoginController {
+
+    @Autowired
+    private AdminRepo adminRepo;
+
+    @GetMapping("/login")
+    public String loginPage() {
+        return "login";
+    }
+    @GetMapping("/")
+    public String home() {
+        // Redirect to the login page
+        return "redirect:/login";
+    }
+
+    @PostMapping("/login")
+    public String doLogin(@RequestParam String email,
+                          @RequestParam String password,
+                          HttpSession session,
+                          Model model) {
+        Admin admin = adminRepo.findByEmail(email).orElse(null);
+        if (admin != null && admin.getPassword().equals(password)) {
+            session.setAttribute("userRole", "ADMIN");
+            session.setAttribute("userName", admin.getName());
+            return "redirect:/dashboard";
+        } else {
+            model.addAttribute("error", "Invalid credentials");
+            return "login";
+        }
+    }
+}
+

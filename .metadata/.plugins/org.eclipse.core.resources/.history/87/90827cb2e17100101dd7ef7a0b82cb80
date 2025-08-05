@@ -1,0 +1,18 @@
+package prajwal.in.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import prajwal.in.entity.CaseWorker;
+
+@Controller
+public class CaseWorkerViewController {
+
+    @GetMapping("/caseworker/register-form")
+    public String showRegistrationForm(Model model) {
+        model.addAttribute("worker", new CaseWorker());
+        return "register-caseworker";
+    }
+}
+

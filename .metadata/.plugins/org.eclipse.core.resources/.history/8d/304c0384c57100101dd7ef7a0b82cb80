@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>IES Login</title>
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 60px auto;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-logo {
+            width: 150px;
+            display: block;
+            margin: 0 auto 20px auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .btn-login {
+            background-color: #6c63ff;
+            color: white;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 14px;
+        }
+
+        input::placeholder {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img th:src="@{/images/myName-Logo.png}" alt="Logo" class="login-logo"/>
+
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <input type="email" name="email" class="form-control" placeholder="Enter Email Id" required />
+            </div>
+            <div class="form-group">
+                <input type="password" name="password" class="form-control" placeholder="Enter Password" required />
+            </div>
+            <button type="submit" class="btn btn-login btn-block">Sign In</button>
+        </form>
+
+        <div class="forgot-password">
+            <a th:href="@{/forgot-password}">Forgot Password?</a>
+        </div>
+    </div>
+</body>
+</html>

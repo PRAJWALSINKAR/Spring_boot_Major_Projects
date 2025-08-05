@@ -1,0 +1,45 @@
+package prajwal.in.service;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+
+import prajwal.in.dto.LoginRequest;
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.repo.CaseWorkerRepo;
+
+@Service
+public class CaseWorkerServiceImpl implements CaseWorkerService {
+
+    @Autowired
+    private CaseWorkerRepo caseWorkerRepo;
+
+    @Override
+    public CaseWorker createCaseWorker(CaseWorker worker) {
+        // For now store plain password; later add password encoding
+        return caseWorkerRepo.save(worker);
+    }
+
+    @Override
+    public ResponseEntity<String> login(LoginRequest request) {
+        Optional<CaseWorker> optional = caseWorkerRepo.findByEmail(request.getEmail());
+        if (optional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials: email not found");
+        }
+        CaseWorker worker = optional.get();
+
+        if (!request.getPassword().equals(worker.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials: wrong password");
+        }
+
+        return ResponseEntity.ok("Login successful");
+    }
+
+    @Override
+    public List<CaseWorker> findAll() {
+        return caseWorkerRepo.findAll();
+    }
+}

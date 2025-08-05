@@ -1,0 +1,66 @@
+package prajwal.in.service;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import prajwal.in.dto.LoginRequest;
+import prajwal.in.entity.Admin;
+import prajwal.in.repo.AdminRepo;
+
+@Service
+public class AdminServiceImpl implements AdminService {
+
+    @Autowired
+    private AdminRepo adminRepo;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Override
+    public Admin createAdmin(Admin admin) {
+        String rawPwd = admin.getPassword();
+        admin.setPassword(passwordEncoder.encode(rawPwd));
+        return adminRepo.save(admin);
+    }
+
+    @Override
+    public List<Admin> findAll() {
+        return adminRepo.findAll();
+    }
+    @Override
+    public ResponseEntity<String> login(LoginRequest request) {
+        try {
+            System.out.println("🟡 Login attempt: " + request.getEmail() + " | " + request.getPassword());
+
+            Optional<Admin> optional = adminRepo.findByEmail(request.getEmail());
+            if (optional.isEmpty()) {
+                System.out.println("🔴 Email not found.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            }
+
+            Admin admin = optional.get();
+            System.out.println("🟢 Found Admin: " + admin.getEmail());
+            System.out.println("Stored (encoded) password: " + admin.getPassword());
+
+            boolean isMatched = passwordEncoder.matches(request.getPassword(), admin.getPassword());
+            System.out.println("Password matched? " + isMatched);
+
+            if (!isMatched) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            }
+
+            return ResponseEntity.ok("✅ Login Successful!");
+
+        } catch (Exception e) {
+            e.printStackTrace(); // print full error to console
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("⚠️ Server error: " + e.getMessage());
+        }
+    }
+
+
+}

@@ -1,0 +1,34 @@
+package prajwal.in.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity (consider enabling in production)
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/login", "/logout").permitAll()  // allow public access to login and logout
+                .requestMatchers("/dashboard", "/api/**").authenticated()  // secure dashboard and api endpoints
+                .anyRequest().denyAll()  // deny access to any other URL
+            )
+            .formLogin(form -> form.disable())   // Disable Spring Security form login
+            .httpBasic(httpBasic -> httpBasic.disable()) // Disable HTTP Basic auth default popup
+            .logout(logout -> logout.disable()); // disable Spring Security default logout handling
+
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        // Plain text password for testing ONLY (NOT for production)
+        return NoOpPasswordEncoder.getInstance();
+    }
+}

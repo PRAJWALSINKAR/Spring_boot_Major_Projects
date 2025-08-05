@@ -1,0 +1,22 @@
+package prajwal.in.service;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class AdminDetailsService implements UserDetailsService {
+
+    @Autowired
+    private AdminRepo adminRepo;
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        Admin admin = adminRepo.findByEmail(email)
+            .orElseThrow(() -> new UsernameNotFoundException("Admin not found"));
+
+        return User.builder()
+                .username(admin.getEmail())
+                .password(admin.getPassword())
+                .roles("ADMIN")
+                .build();
+    }
+}

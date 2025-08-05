@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Dashboard</title>
+</head>
+<body>
+  <h2 th:text="'Welcome ' + ${userName}"></h2>
+
+  <div th:if="${role == 'ADMIN'}">
+    <p>Admin Access</p>
+    <a th:href="@{/create-account}">Create Account</a>
+    <a th:href="@{/plans}">Manage Plans</a>
+  </div>
+
+  <div th:if="${role == 'CASEWORKER'}">
+    <p>Case Worker Dashboard</p>
+    <a th:href="@{/application}">Register Application</a>
+  </div>
+</body>
+</html>

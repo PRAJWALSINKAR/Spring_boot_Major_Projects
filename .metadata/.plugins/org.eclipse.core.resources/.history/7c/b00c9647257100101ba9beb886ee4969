@@ -1,0 +1,51 @@
+package prajwal.in.service;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import prajwal.in.dto.LoginRequest;
+import prajwal.in.entity.Admin;
+import prajwal.in.repo.AdminRepo;
+
+@Service
+public class AdminServiceImpl implements AdminService {
+
+    @Autowired
+    private AdminRepo adminRepo;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Override
+    public Admin createAdmin(Admin admin) {
+        admin.setPassword(passwordEncoder.encode(admin.getPassword()));
+        return adminRepo.save(admin);
+    }
+
+    @Override
+    public ResponseEntity<String> login(LoginRequest request) {
+        Optional<Admin> optional = adminRepo.findByEmail(request.getEmail());
+
+        if (optional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials: email not found");
+        }
+
+        Admin admin = optional.get();
+
+        if (!passwordEncoder.matches(request.getPassword(), admin.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials: wrong password");
+        }
+
+        return ResponseEntity.ok("Login successful");
+    }
+
+    @Override
+    public List<Admin> findAll() {
+        return adminRepo.findAll();
+    }
+}

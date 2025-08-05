@@ -1,0 +1,70 @@
+package prajwal.in.controller;
+
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.entity.Admin;
+import prajwal.in.service.AdminService;
+import prajwal.in.service.CaseWorkerService;
+import prajwal.in.service.ApplicationService; // You need to create this service for application data
+
+@Controller
+public class DashboardController {
+
+    @Autowired
+    private AdminService adminService;
+
+    @Autowired
+    private CaseWorkerService caseWorkerService;
+
+    @Autowired
+    private ApplicationService applicationService; // Your service for application data
+
+    @GetMapping("/dashboard")
+    public String dashboard(Model model, Principal principal) {
+        String email = principal.getName();
+
+        Admin admin = adminService.findByEmail(email).orElse(null);
+        CaseWorker caseWorker = caseWorkerService.findByEmail(email).orElse(null);
+
+        boolean isAdmin = admin != null;
+        model.addAttribute("isAdmin", isAdmin);
+        model.addAttribute("userName", isAdmin ? admin.getName() : caseWorker.getName());
+
+        // Fetch dashboard data
+        Map<String, Object> stats = applicationService.getDashboardStats();
+        model.addAttribute("planCount", stats.get("planCount"));
+        model.addAttribute("citizensApproved", stats.get("citizensApproved"));
+        model.addAttribute("citizensDenied", stats.get("citizensDenied"));
+        model.addAttribute("benefitsGiven", stats.get("benefitsGiven"));
+
+        return "dashboard";
+    }
+
+    // Fetch all applications (for admin) or own applications (for case worker) - JSON API for usage in UI
+    @GetMapping("/api/applications")
+    @ResponseBody
+    public List<Object> getApplications(Principal principal) {
+        String email = principal.getName();
+
+        Admin admin = adminService.findByEmail(email).orElse(null);
+        if (admin != null) {
+            // Admin: get all applications
+            return applicationService.findAllApplications();
+        } else {
+            CaseWorker caseWorker = caseWorkerService.findByEmail(email).orElse(null);
+            if (caseWorker != null) {
+                // CaseWorker: get only applications created by this case worker
+                return applicationService.findApplicationsByCaseWorkerId(caseWorker.getId());
+            }
+        }
+        return List.of(); // empty if not found
+    }
+}
