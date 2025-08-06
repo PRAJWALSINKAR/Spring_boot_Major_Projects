@@ -1,0 +1,59 @@
+package prajwal.in.controller;
+
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.entity.Admin;
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.repo.AdminRepo;
+import prajwal.in.repo.CaseWorkerRepo;
+
+@Controller
+public class LoginController {
+
+    @Autowired
+    private AdminRepo adminRepo;
+
+    @Autowired
+    private CaseWorkerRepo caseWorkerRepo;
+
+    @GetMapping({"/", "/login"})
+    public String showLoginPage() {
+        return "login"; // Thymeleaf login.html page
+    }
+
+    @PostMapping("/login")
+    public String loginCheck(@RequestParam String email,
+                             @RequestParam String password,
+                             Model model,
+                             HttpSession session) {
+
+        Admin admin = adminRepo.findByEmail(email).orElse(null);
+        if (admin != null && admin.getPassword().equals(password)) {
+            session.setAttribute("email", email);
+            session.setAttribute("userName", admin.getName());
+            session.setAttribute("role", "ADMIN");
+            return "redirect:/dashboard";
+        }
+
+        CaseWorker worker = caseWorkerRepo.findByEmail(email).orElse(null);
+        if (worker != null && worker.getPassword().equals(password)) {
+            session.setAttribute("email", email);
+            session.setAttribute("userName", worker.getName());
+            session.setAttribute("role", "CASEWORKER");
+            return "redirect:/dashboard";
+        }
+
+        model.addAttribute("error", "Invalid email or password");
+        return "login";
+    }
+
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/login";
+    }
+}

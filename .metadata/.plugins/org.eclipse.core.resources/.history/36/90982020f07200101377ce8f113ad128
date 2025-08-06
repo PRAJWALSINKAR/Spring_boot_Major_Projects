@@ -1,0 +1,53 @@
+package prajwal.in.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import prajwal.in.entity.Plan;
+import prajwal.in.service.PlanService;
+
+@Controller
+@RequestMapping("/plan")
+public class PlanController {
+
+    @Autowired
+    private PlanService planService;
+
+    @GetMapping("/create-form")
+    public String showPlanForm(Model model) {
+        model.addAttribute("plan", new Plan());
+        return "create-plan";
+    }
+
+    @PostMapping("/save")
+    public String savePlan(@ModelAttribute("plan") Plan plan, Model model) {
+        boolean saved = planService.savePlan(plan);
+        if (saved) {
+            model.addAttribute("succMsg", "Plan saved successfully!");
+        } else {
+            model.addAttribute("errMsg", "Failed to save plan.");
+        }
+        return "create-plan";
+    }
+
+    @GetMapping("/view")
+    public String viewPlans(Model model) {
+        model.addAttribute("plans", planService.getAllPlans());
+        return "view-plan";
+    }
+
+  
+
+    @GetMapping("/delete/{id}")
+    public String deletePlan(@PathVariable Long id) {
+        planService.deletePlan(id);
+        return "redirect:/plan/view";
+    }
+
+    @GetMapping("/toggle-status/{id}")
+    public String toggleStatus(@PathVariable Long id) {
+        planService.togglePlanStatus(id);
+        return "redirect:/plan/view";
+    }
+}

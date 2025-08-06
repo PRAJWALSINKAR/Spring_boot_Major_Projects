@@ -1,10 +1,6 @@
 package prajwal.in.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -22,12 +18,12 @@ import prajwal.in.repo.CaseWorkerRepo;
 @Service
 public class AdminServiceImpl implements AdminService {
 
-	@Autowired
-	private CaseWorkerRepo caseWorkerRepo;
-	
-	@Autowired
-	private JavaMailSender mailSender;
-	
+    @Autowired
+    private CaseWorkerRepo caseWorkerRepo;
+
+    @Autowired
+    private JavaMailSender mailSender;
+
     private final AdminRepo adminRepo;
 
     public AdminServiceImpl(AdminRepo adminRepo) {
@@ -36,12 +32,14 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public Admin createAdmin(Admin admin) {
-        // Store password as plain text (for debugging only)
-        return adminRepo.save(admin);
+        return adminRepo.save(admin); // Save plain for now
     }
+
+    @Override
     public Optional<Admin> findByEmail(String email) {
         return adminRepo.findByEmail(email);
     }
+
     @Override
     public ResponseEntity<Map<String, String>> login(LoginRequest request) {
         Optional<Admin> optional = adminRepo.findByEmail(request.getEmail());
@@ -49,6 +47,7 @@ public class AdminServiceImpl implements AdminService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid credentials: email not found"));
         }
+
         Admin admin = optional.get();
 
         if (!request.getPassword().equals(admin.getPassword())) {
@@ -57,9 +56,9 @@ public class AdminServiceImpl implements AdminService {
         }
 
         return ResponseEntity.ok(Map.of(
-        	    "message", "Login successful",
-        	    "role", "ADMIN"
-        	));
+                "message", "Login successful",
+                "role", "ADMIN"
+        ));
     }
 
     @Override
@@ -68,51 +67,49 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-		public ResponseEntity<String> createCaseWorker(CaseWorkerRequest request) {
-		    if (caseWorkerRepo.findByEmail(request.getEmail()).isPresent()) {
-		        return ResponseEntity.status(HttpStatus.CONFLICT)
-		                .body("Case Worker already exists with this email");
-		    }
+    public ResponseEntity<String> createCaseWorker(CaseWorkerRequest request) {
+        if (caseWorkerRepo.findByEmail(request.getEmail()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Case Worker already exists with this email");
+        }
 
-		    String tempPassword = UUID.randomUUID().toString().substring(0, 8);
-		    String token = UUID.randomUUID().toString();
-		    LocalDateTime expiry = LocalDateTime.now().plusHours(1);
+        // Generate temp password and token (just to embed in email)
+        String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+        String token = UUID.randomUUID().toString(); // Reset token to map in DB
 
-		    CaseWorker worker = new CaseWorker();
-		    worker.setName(request.getName());
-		    worker.setEmail(request.getEmail());
-		    worker.setPhoneNumber(request.getPhoneNumber());
-		    worker.setGender(request.getGender());
-		    worker.setDob(request.getDob());
-		    worker.setSsn(request.getSsn());
+        // Create and save worker
+        CaseWorker worker = new CaseWorker();
+        worker.setName(request.getName());
+        worker.setEmail(request.getEmail());
+        worker.setPhoneNumber(request.getPhoneNumber());
+        worker.setGender(request.getGender());
+        worker.setDob(request.getDob());
+        worker.setSsn(request.getSsn());
+        worker.setPassword(tempPassword);           // Store as plain
+        worker.setTempPassword(tempPassword);       // For checking during reset
+        worker.setResetToken(token);                // Used in URL
+        worker.setAccStatus("LOCKED");              // For future logic if needed
 
-		    worker.setPassword(tempPassword);
-		    worker.setTempPassword(tempPassword);
-		    worker.setPasswordResetRequired(true);
-		    worker.setResetToken(token);
-		    worker.setResetTokenExpiry(expiry);
+        caseWorkerRepo.save(worker);
 
-		    caseWorkerRepo.save(worker);
+        // Send email with reset link
+        String resetLink = "http://localhost:8080/reset-password?token=" + token;
+        String body = String.format(
+                "Hi %s,\n\nYour case worker account has been created.\n" +
+                        "Temporary Password: %s\n" +
+                        "Reset your password here: %s\n\nThanks!",
+                request.getName(), tempPassword, resetLink
+        );
 
-		    // Send mail
-		    String resetLink = "http://localhost:8080/reset-password?token=" + token;
-		    String body = String.format(
-		            "Hi %s,\n\nYour case worker account has been created.\n" +
-		            "Temporary Password: %s\n" +
-		            "Please reset your password here: %s\n\nThanks!",
-		            request.getName(), tempPassword, resetLink
-		    );
+        sendEmail(request.getEmail(), "Case Worker Account Created", body);
+        return ResponseEntity.ok("Case Worker created and email sent.");
+    }
 
-		    sendEmail(request.getEmail(), "Case Worker Account Created", body);
-
-		    return ResponseEntity.ok("Case Worker created and email sent.");
-		}
-
-		private void sendEmail(String to, String subject, String body) {
-		    SimpleMailMessage message = new SimpleMailMessage();
-		    message.setTo(to);
-		    message.setSubject(subject);
-		    message.setText(body);
-		    mailSender.send(message);
-		}
+    private void sendEmail(String to, String subject, String body) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
+    }
 }

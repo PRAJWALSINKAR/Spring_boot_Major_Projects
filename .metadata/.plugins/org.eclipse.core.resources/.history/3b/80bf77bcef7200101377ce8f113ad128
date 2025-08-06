@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Manage Plans</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"/>
+</head>
+<body>
+<div class="container mt-4">
+
+    <h2 th:text="${plan.id != null} ? 'Edit Plan' : 'Create Plan'" class="mb-4"></h2>
+
+    <!-- Success / Error messages -->
+    <div th:if="${succMsg}" class="alert alert-success" th:text="${succMsg}"></div>
+    <div th:if="${errMsg}" class="alert alert-danger" th:text="${errMsg}"></div>
+
+    <!-- CREATE / EDIT FORM -->
+    <form th:action="@{/plan/save}" method="post" th:object="${plan}" class="border p-4 rounded shadow-sm bg-light mb-4">
+        <input type="hidden" th:field="*{id}"/>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Plan Name</label>
+                <input type="text" th:field="*{planName}" class="form-control" required/>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Plan Category</label>
+                <input type="text" th:field="*{planCategory}" class="form-control" required/>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Start Date</label>
+                <input type="date" th:field="*{planStartDate}" class="form-control"/>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">End Date</label>
+                <input type="date" th:field="*{planEndDate}" class="form-control"/>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <span th:if="${plan.id != null}">Update Plan</span>
+            <span th:unless="${plan.id != null}">Save Plan</span>
+        </button>
+        <a href="/plan/view" class="btn btn-secondary">Cancel</a>
+    </form>
+
+    <!-- VIEW TABLE -->
+    <h3>View Plans</h3>
+    <table class="table table-bordered table-striped">
+        <thead>
+        <tr>
+            <th>S.NO</th>
+            <th>Plan Name</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Category</th>
+            <th>Edit</th>
+            <th>Delete</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="planRow, stat : ${plans}">
+            <td th:text="${stat.count}">1</td>
+            <td th:text="${planRow.planName}">Plan Name</td>
+
+            <td>
+                <span th:if="${planRow.planStartDate != null}"
+                      th:text="${#temporals.format(planRow.planStartDate, 'yyyy-MM-dd')}">Start Date</span>
+                <span th:if="${planRow.planStartDate == null}">N/A</span>
+            </td>
+            <td>
+                <span th:if="${planRow.planEndDate != null}"
+                      th:text="${#temporals.format(planRow.planEndDate, 'yyyy-MM-dd')}">End Date</span>
+                <span th:if="${planRow.planEndDate == null}">N/A</span>
+            </td>
+
+            <td th:text="${planRow.planCategory}">Category</td>
+
+            <td>
+                <a th:href="@{'/plan/edit/' + ${planRow.id}}" class="btn btn-primary btn-sm">✏️</a>
+            </td>
+            <td>
+                <a th:href="@{'/plan/delete/' + ${planRow.id}}" class="btn btn-danger btn-sm"
+                   onclick="return confirm('Are you sure you want to delete this plan?');">🗑</a>
+            </td>
+            <td>
+                <a th:if="${planRow.activeSw == 'Y'}"
+                   th:href="@{'/plan/toggle-status/' + ${planRow.id}}"
+                   class="btn btn-danger btn-sm">❌</a>
+                <a th:if="${planRow.activeSw != 'Y'}"
+                   th:href="@{'/plan/toggle-status/' + ${planRow.id}}"
+                   class="btn btn-success btn-sm">✅</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+</div>
+</body>
+</html>

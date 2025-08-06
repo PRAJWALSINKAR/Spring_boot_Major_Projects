@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background: #f2f2f2;
+        }
+        .login-container {
+            width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <form method="post" th:action="@{/login}">
+        <div class="text-center">
+            <img th:src="@{/images/myName-Logo.png}" alt="Logo" width="80" height="80"/>
+        </div>
+        <br/>
+        <div class="form-group">
+            <!-- 🔁 FIXED: changed from name="username" to name="email" -->
+            <input type="email" name="email" class="form-control" placeholder="Enter Email Id" required>
+        </div>
+        <div class="form-group">
+            <input type="password" name="password" class="form-control" placeholder="Enter Password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+        <div class="text-center mt-2">
+            <a href="#" class="text-primary">Forgot Password?</a>
+        </div>
+        <div th:if="${error}" class="text-danger text-center mt-2">
+    <span th:text="${error}"></span>
+</div>
+
+    </form>
+</div>
+</body>
+</html>

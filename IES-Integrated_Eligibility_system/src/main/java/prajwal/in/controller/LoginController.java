@@ -25,12 +25,14 @@ public class LoginController {
         return "login"; // Thymeleaf login.html page
     }
 
+  
     @PostMapping("/login")
     public String loginCheck(@RequestParam String email,
                              @RequestParam String password,
                              Model model,
                              HttpSession session) {
 
+        // 1. Check for Admin
         Admin admin = adminRepo.findByEmail(email).orElse(null);
         if (admin != null && admin.getPassword().equals(password)) {
             session.setAttribute("email", email);
@@ -39,17 +41,38 @@ public class LoginController {
             return "redirect:/dashboard";
         }
 
+        // 2. Check for CaseWorker
         CaseWorker worker = caseWorkerRepo.findByEmail(email).orElse(null);
-        if (worker != null && worker.getPassword().equals(password)) {
-            session.setAttribute("email", email);
-            session.setAttribute("userName", worker.getName());
-            session.setAttribute("role", "CASEWORKER");
-            return "redirect:/dashboard";
+        if (worker != null) {
+            // First check for null password
+            if (worker.getPassword() == null) {
+                model.addAttribute("error", "Your password is not set. Please check your email to reset it.");
+                return "login";
+            }
+
+            // Then check if account is locked
+            if (!"ACTIVE".equals(worker.getAccStatus())) {
+                model.addAttribute("error", "Your account is locked. Please reset your password to activate it OR Contact to Admin.");
+                return "login";
+            }
+
+            // Then check password
+            if (password.equals(worker.getPassword())) {
+                session.setAttribute("email", email);
+                session.setAttribute("userName", worker.getName());
+                session.setAttribute("role", "CASEWORKER");
+                return "redirect:/dashboard";
+            } else {
+                model.addAttribute("error", "Invalid email or password");
+                return "login";
+            }
         }
 
+        // If not admin or caseworker
         model.addAttribute("error", "Invalid email or password");
         return "login";
     }
+
 
     @GetMapping("/logout")
     public String logout(HttpSession session) {

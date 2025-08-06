@@ -1,22 +1,17 @@
 package prajwal.in.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import prajwal.in.dto.CaseWorkerRequest;
 import prajwal.in.dto.LoginRequest;
 import prajwal.in.entity.CaseWorker;
 import prajwal.in.repo.CaseWorkerRepo;
-import org.apache.commons.lang3.RandomStringUtils;
+import prajwal.in.util.EmailUtils;
+import prajwal.in.util.PwdUtils;
 
 @Service
 public class CaseWorkerServiceImpl implements CaseWorkerService {
@@ -25,62 +20,50 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
     private CaseWorkerRepo caseWorkerRepo;
 
     @Autowired
-    private JavaMailSender mailSender;
+    private EmailUtils emailUtils;
 
     @Override
     public CaseWorker createCaseWorker(CaseWorker worker) {
-        String tempPassword = RandomStringUtils.randomAlphanumeric(12);
-        String resetToken = UUID.randomUUID().toString();
+        String tempPassword = PwdUtils.generateRandomPwd();
+        String token = UUID.randomUUID().toString();
 
+        worker.setPassword(tempPassword);
         worker.setTempPassword(tempPassword);
-        worker.setResetToken(resetToken);
-        worker.setPasswordResetRequired(true);
-        worker.setResetTokenExpiry(LocalDateTime.now().plusHours(24));
-        worker.setPassword(tempPassword);  // For now store as plain text
+        worker.setResetToken(token);
+        worker.setAccStatus("LOCKED");
 
-        // Save worker
-        CaseWorker saved = caseWorkerRepo.save(worker);
+        caseWorkerRepo.save(worker);
 
-        // Send email with temp password and reset link
-        sendResetEmail(saved.getEmail(), tempPassword, resetToken);
-
-        return saved;
+        sendResetEmail(worker.getEmail(), tempPassword, token);
+        return worker;
     }
 
     private void sendResetEmail(String email, String tempPassword, String resetToken) {
-        String resetLink = "http://localhost:4200/reset-password?token=" + resetToken;
-        String body = "Welcome! Your temporary password is: " + tempPassword + "\n" +
-                      "Please reset your password using the link below within 24 hours:\n" + resetLink;
+        String resetLink = "http://localhost:8080/reset-password?token=" + resetToken;
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("Password Reset - IES Portal");
-        message.setText(body);
-        mailSender.send(message);
+        String body = "<h2>Welcome to IES Portal</h2>"
+                    + "<p><strong>Temporary Password:</strong> " + tempPassword + "</p>"
+                    + "<p>Click below to reset your password:</p>"
+                    + "<a href='" + resetLink + "'>Reset Password</a>";
+
+        emailUtils.sendEmail(email, "Reset Your IES Password", body);
     }
 
     @Override
     public ResponseEntity<Map<String, String>> login(LoginRequest request) {
         Optional<CaseWorker> optional = caseWorkerRepo.findByEmail(request.getEmail());
-        if (optional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid credentials: email not found"));
-        }
 
-        CaseWorker worker = optional.get();
-
-        if (!request.getPassword().equals(worker.getPassword())) {
+        if (optional.isEmpty() || !request.getPassword().equals(optional.get().getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid credentials: wrong password"));
+                    .body(Map.of("message", "Invalid credentials"));
         }
 
         return ResponseEntity.ok(Map.of(
-            "message", "Login successful",
-            "role", "CASEWORKER"
+                "message", "Login successful",
+                "role", "CASEWORKER"
         ));
     }
 
-    
     @Override
     public List<CaseWorker> findAll() {
         return caseWorkerRepo.findAll();
@@ -94,23 +77,96 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
     @Override
     public ResponseEntity<String> resetPassword(String token, String newPassword) {
         CaseWorker worker = findByResetToken(token);
-        if (worker == null || worker.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired reset token");
+        if (worker == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid reset token");
         }
 
         worker.setPassword(newPassword);
         worker.setTempPassword(null);
-        worker.setPasswordResetRequired(false);
         worker.setResetToken(null);
-        worker.setResetTokenExpiry(null);
+        worker.setAccStatus("ACTIVE");
 
         caseWorkerRepo.save(worker);
-
         return ResponseEntity.ok("Password reset successful");
     }
 
-	public Optional<CaseWorker> findByEmail(String email) {
-		// TODO Auto-generated method stub
-	    return caseWorkerRepo.findByEmail(email);
-	}
+    @Override
+    public Optional<CaseWorker> findByEmail(String email) {
+        return caseWorkerRepo.findByEmail(email);
+    }
+
+    @Override
+    public void updateCaseWorker(CaseWorker worker) {
+        caseWorkerRepo.save(worker);
+    }
+
+    @Override
+    public boolean registerCaseWorker(CaseWorkerRequest form) {
+        if (caseWorkerRepo.findByEmail(form.getEmail()).isPresent()) {
+            return false;
+        }
+
+        CaseWorker worker = new CaseWorker();
+        worker.setName(form.getName());
+        worker.setEmail(form.getEmail());
+        worker.setPhoneNumber(form.getPhoneNumber());
+        worker.setGender(form.getGender());
+        worker.setDob(form.getDob());
+        worker.setSsn(form.getSsn());
+
+        String tempPwd = PwdUtils.generateRandomPwd();
+        worker.setPassword(tempPwd);
+        worker.setTempPassword(tempPwd);
+        worker.setAccStatus("LOCKED");
+
+        String token = UUID.randomUUID().toString();
+        worker.setResetToken(token);
+
+        String body = "<h2>Temporary Password: </h2>" + tempPwd +
+                      "<br><a href='http://localhost:8080/reset-password?token=" + token + "'>Reset Password</a>";
+
+        boolean emailSent = emailUtils.sendEmail(form.getEmail(), "Reset Your Password", body);
+
+        if (emailSent) {
+            caseWorkerRepo.save(worker);
+            return true;
+        }
+
+        return false;
+    }
+    @Override
+    public void deleteCaseWorker(Long id) {
+        caseWorkerRepo.deleteById(id);
+    }
+
+    @Override
+    public void toggleCaseWorkerStatus(Long id) {
+        Optional<CaseWorker> optional = caseWorkerRepo.findById(id);
+        if (optional.isPresent()) {
+            CaseWorker worker = optional.get();
+
+            // Normalize to uppercase before comparing
+            String status = worker.getAccStatus();
+            if (status != null && status.equalsIgnoreCase("ACTIVE")) {
+                worker.setAccStatus("LOCKED");
+            } else {
+                worker.setAccStatus("ACTIVE");
+            }
+
+            caseWorkerRepo.save(worker); // save updated status
+        }
+    }
+
+    @Override
+    public List<CaseWorker> searchByEmail(String email) {
+        return caseWorkerRepo.findByEmailContainingIgnoreCase(email);
+    }
+
+    @Override
+    public Optional<CaseWorker> findById(Long id) {
+        return caseWorkerRepo.findById(id);
+    }
+
+    
+    
 }

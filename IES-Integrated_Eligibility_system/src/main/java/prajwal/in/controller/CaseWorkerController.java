@@ -1,41 +1,74 @@
 package prajwal.in.controller;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import prajwal.in.dto.LoginRequest;
+import prajwal.in.dto.CaseWorkerRequest;
 import prajwal.in.entity.CaseWorker;
 import prajwal.in.service.CaseWorkerService;
 
-@RestController
-@RequestMapping("/api/caseworkers")
+@Controller
+@RequestMapping("/caseworker")
 public class CaseWorkerController {
 
     @Autowired
     private CaseWorkerService caseWorkerService;
 
-    @PostMapping("/register")
-    public ResponseEntity<CaseWorker> registerCaseWorker(@RequestBody CaseWorker worker) {
-        CaseWorker saved = caseWorkerService.createCaseWorker(worker);
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+    @GetMapping("/register-form")
+    public String showRegistrationForm(Model model) {
+        model.addAttribute("caseworker", new CaseWorkerRequest());
+        return "register-caseworker";
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest request) {
-        return caseWorkerService.login(request);
+    @PostMapping("/save")
+    public String saveCaseworker(@ModelAttribute("caseworker") CaseWorkerRequest form, Model model) {
+
+        boolean isSaved = caseWorkerService.registerCaseWorker(form);
+
+        if (isSaved) {
+            model.addAttribute("succMsg", "Caseworker account created. Check email for temp password.");
+        } else {
+            model.addAttribute("errMsg", "Failed to create caseworker. Email may already exist.");
+        }
+
+        return "register-caseworker";
+    }
+    
+    @GetMapping("/view")
+    public String viewCaseworkers(@RequestParam(value = "email", required = false) String email, Model model) {
+        List<CaseWorker> list = (email != null && !email.isEmpty())
+            ? caseWorkerService.searchByEmail(email)
+            : caseWorkerService.findAll();
+
+        model.addAttribute("caseworkers", list);
+        return "view-caseworkers";
     }
 
-    @GetMapping("/all")
-    public List<CaseWorker> getAllCaseWorkers() {
-        return caseWorkerService.findAll();
+    @GetMapping("/delete/{id}")
+    public String deleteCaseworker(@PathVariable Long id) {
+        caseWorkerService.deleteCaseWorker(id);
+        return "redirect:/caseworker/view";
     }
 
-    @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestBody String newPassword) {
-        return caseWorkerService.resetPassword(token, newPassword);
+    @GetMapping("/toggle-status/{id}")
+    public String toggleStatus(@PathVariable Long id) {
+        caseWorkerService.toggleCaseWorkerStatus(id);
+        return "redirect:/caseworker/view";
     }
+
+    @GetMapping("/edit/{id}")
+    public String editCaseworker(@PathVariable Long id, Model model) {
+        caseWorkerService.findById(id).ifPresent(worker -> model.addAttribute("caseworker", worker));
+        return "edit-caseworker";
+    }
+    @PostMapping("/update")
+    public String updateCaseworker(@ModelAttribute("caseworker") CaseWorker worker) {
+        caseWorkerService.updateCaseWorker(worker);
+        return "redirect:/caseworker/view";
+    }
+
 }

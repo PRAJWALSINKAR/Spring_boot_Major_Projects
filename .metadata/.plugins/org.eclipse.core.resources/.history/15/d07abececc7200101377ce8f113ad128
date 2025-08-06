@@ -1,0 +1,59 @@
+package prajwal.in.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.service.CaseWorkerService;
+
+@Controller
+public class ResetPasswordPageController {
+
+    @Autowired
+    private CaseWorkerService caseWorkerService;
+
+    @GetMapping("/reset-password")
+    public String showResetPasswordForm(@RequestParam("token") String token, Model model) {
+        CaseWorker worker = caseWorkerService.findByResetToken(token);
+        if (worker == null || worker.getResetTokenExpiry().isBefore(java.time.LocalDateTime.now())) {
+            model.addAttribute("error", "Invalid or expired token");
+            return "reset-password";
+        }
+
+        model.addAttribute("token", token);
+        return "reset-password";
+    }
+
+    @PostMapping("/reset-password")
+    public String handleResetPassword(
+            @RequestParam("token") String token,
+            @RequestParam("tempPassword") String tempPwd,
+            @RequestParam("newPassword") String newPwd,
+            Model model) {
+
+        CaseWorker worker = caseWorkerService.findByResetToken(token);
+        if (worker == null || worker.getResetTokenExpiry().isBefore(java.time.LocalDateTime.now())) {
+            model.addAttribute("error", "Invalid or expired token");
+            return "reset-password";
+        }
+
+        if (!tempPwd.equals(worker.getTempPassword())) {
+            model.addAttribute("error", "Incorrect temporary password");
+            model.addAttribute("token", token);
+            return "reset-password";
+        }
+
+        // All valid, update password
+        worker.setPassword(newPwd);
+        worker.setTempPassword(null);
+        worker.setPasswordResetRequired(false);
+        worker.setResetToken(null);
+        worker.setResetTokenExpiry(null);
+        caseWorkerService.updateCaseWorker(worker); // or use save directly from repo
+
+        model.addAttribute("message", "Password reset successful");
+        return "reset-password";
+    }
+}

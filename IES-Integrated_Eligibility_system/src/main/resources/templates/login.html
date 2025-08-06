@@ -37,8 +37,9 @@
             <a href="#" class="text-primary">Forgot Password?</a>
         </div>
         <div th:if="${error}" class="text-danger text-center mt-2">
-            Invalid email or password
-        </div>
+    <span th:text="${error}"></span> 
+      </div>
+
     </form>
 </div>
 </body>

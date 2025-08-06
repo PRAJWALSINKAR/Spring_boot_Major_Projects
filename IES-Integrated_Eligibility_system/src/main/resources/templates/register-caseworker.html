@@ -9,8 +9,11 @@
 <div class="container mt-5">
     <h2 class="mb-4">Register Case Worker</h2>
 
-    <form th:action="@{/caseworker/save}" method="post" th:object="${caseWorker}" class="border p-4 rounded shadow-sm bg-light">
+    <!-- Success or Error Message -->
+    <div th:if="${succMsg}" class="alert alert-success" th:text="${succMsg}"></div>
+    <div th:if="${errMsg}" class="alert alert-danger" th:text="${errMsg}"></div>
 
+    <form th:action="@{/caseworker/save}" method="post" th:object="${caseworker}" class="border p-4 rounded shadow-sm bg-light">
         <div class="mb-3">
             <label for="name" class="form-label">Full Name</label>
             <input type="text" th:field="*{name}" class="form-control" id="name" required>

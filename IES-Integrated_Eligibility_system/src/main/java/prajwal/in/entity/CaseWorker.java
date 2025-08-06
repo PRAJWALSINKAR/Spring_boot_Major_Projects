@@ -1,15 +1,14 @@
 package prajwal.in.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Entity
-@Table(name = "case_workers")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class CaseWorker {
 
     @Id
@@ -17,23 +16,16 @@ public class CaseWorker {
     private Long id;
 
     private String name;
-
-    @Column(unique = true)
     private String email;
-
     private String password;
-
+    private String tempPassword;
     private String phoneNumber;
-
     private String gender;
-
+    
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate dob;
-
     private String ssn;
 
-    // Password reset support
-    private String tempPassword;
-    private Boolean passwordResetRequired;
-    private String resetToken;
-    private LocalDateTime resetTokenExpiry;
+    private String accStatus; // e.g., LOCKED or ACTIVE
+    private String resetToken; // Simple token (no expiry tracking)
 }
