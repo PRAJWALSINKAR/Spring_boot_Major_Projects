@@ -4,7 +4,6 @@ import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +13,7 @@ import prajwal.in.entity.Admin;
 import prajwal.in.entity.CaseWorker;
 import prajwal.in.repo.AdminRepo;
 import prajwal.in.repo.CaseWorkerRepo;
+import prajwal.in.util.EmailUtils;
 
 @Service
 public class AdminServiceImpl implements AdminService {
@@ -23,6 +23,9 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Autowired
+    private EmailUtils emailUtils;
 
     private final AdminRepo adminRepo;
 
@@ -88,28 +91,24 @@ public class AdminServiceImpl implements AdminService {
         worker.setPassword(tempPassword);           // Store as plain
         worker.setTempPassword(tempPassword);       // For checking during reset
         worker.setResetToken(token);                // Used in URL
-        worker.setAccStatus("LOCKED");              // For future logic if needed
+        worker.setAccStatus("LOCKED");
 
         caseWorkerRepo.save(worker);
 
-        // Send email with reset link
+        // Updated Email Body
         String resetLink = "http://localhost:8080/reset-password?token=" + token;
         String body = String.format(
-                "Hi %s,\n\nYour case worker account has been created.\n" +
-                        "Temporary Password: %s\n" +
-                        "Reset your password here: %s\n\nThanks!",
-                request.getName(), tempPassword, resetLink
+                "<h3>Hi,</h3>" +
+                "<p>I am the Admin of the IES Application.</p>" +
+                "<p>Here is your temporary password: <strong>%s</strong></p>" +
+                "<p>Below is your reset link:</p>" +
+                "<p><a href='%s'>Click here to reset your password</a></p>" +
+                "<br><p>Thanks!</p>",
+                tempPassword, resetLink
         );
 
-        sendEmail(request.getEmail(), "Case Worker Account Created", body);
-        return ResponseEntity.ok("Case Worker created and email sent.");
-    }
 
-    private void sendEmail(String to, String subject, String body) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
-        mailSender.send(message);
+        emailUtils.sendEmail(request.getEmail(), "Case Worker Account Created", body);
+        return ResponseEntity.ok("Case Worker created and email sent.");
     }
 }

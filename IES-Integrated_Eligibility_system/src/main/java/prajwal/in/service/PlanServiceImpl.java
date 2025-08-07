@@ -34,6 +34,11 @@ public class PlanServiceImpl implements PlanService {
     public void deletePlan(Long id) {
         planRepo.deleteById(id);
     }
+    @Override
+    public List<Plan> searchByName(String name) {
+        return planRepo.findByPlanNameContainingIgnoreCase(name);
+    }
+
 
     @Override
     public void togglePlanStatus(Long id) {

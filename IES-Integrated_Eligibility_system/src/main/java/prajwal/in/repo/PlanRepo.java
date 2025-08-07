@@ -8,4 +8,6 @@ import prajwal.in.entity.Plan;
 
 public interface PlanRepo extends JpaRepository<Plan, Long> {
     List<Plan> findByActiveSw(String activeSw);
+    List<Plan> findByPlanNameContainingIgnoreCase(String name);
+
 }

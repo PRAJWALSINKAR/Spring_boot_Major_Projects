@@ -1,0 +1,71 @@
+package prajwal.in.controller;
+
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.entity.CitizenEntity;
+import prajwal.in.repo.CitizenRepo;
+
+import java.util.List;
+
+@Controller
+@RequestMapping("/application")
+public class Citizen_ApplicationController {
+
+    @Autowired
+    private CitizenRepo citizenRepo;
+
+    @GetMapping("/create")
+    public String createCitizen(Model model) {
+        model.addAttribute("citizen", new CitizenEntity());
+        return "create_application";
+    }
+
+    @PostMapping("/save")
+    public String saveCitizen(@ModelAttribute CitizenEntity citizen, HttpSession session, Model model) {
+        String ssn = citizen.getSsn();
+
+        // Validate SSN: must be 8 digits and start with '123'
+        if (ssn == null || !ssn.matches("123\d{5}")) {
+            model.addAttribute("error", "Application not acceptable. You are not from Oidiland.");
+            model.addAttribute("citizen", citizen);
+            return "create_application";
+        }
+
+        // Get current CaseWorker ID from session
+        Long caseWorkerId = (Long) session.getAttribute("userId");
+        if (caseWorkerId != null) {
+            CaseWorker cw = new CaseWorker();
+            cw.setId(caseWorkerId);
+            citizen.setCreatedBy(cw);
+        }
+
+        // Generate random 3-digit case number
+        String randomCaseNum = String.valueOf((int) (Math.random() * 900 + 100));
+        citizen.setCaseNumber(randomCaseNum);
+
+        citizenRepo.save(citizen);
+
+        return "redirect:/application/view";
+    }
+
+    @GetMapping("/view")
+    public String viewCitizens(Model model, HttpSession session) {
+        Long caseWorkerId = (Long) session.getAttribute("userId");
+
+        if (caseWorkerId != null) {
+            CaseWorker cw = new CaseWorker();
+            cw.setId(caseWorkerId);
+
+            List<CitizenEntity> list = citizenRepo.findByCreatedBy(cw);
+            model.addAttribute("citizens", list);
+        } else {
+            model.addAttribute("citizens", List.of());
+        }
+
+        return "view_applications";
+    }
+}

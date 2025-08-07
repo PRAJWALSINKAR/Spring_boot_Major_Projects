@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>View Applications</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    <style>
+        body {
+            display: flex;
+        }
+        .sidebar {
+            width: 200px;
+            background-color: #343a40;
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .sidebar img {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .sidebar a.btn {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .content {
+            flex: 1;
+            padding: 30px;
+        }
+        .top-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <img src="/img/logo.png" alt="Logo"> <!-- Add your logo in static/img/logo.png -->
+        <a href="/dashboard" class="btn btn-light">← Back</a>
+    </div>
+
+    <!-- Main content -->
+    <div class="content">
+        <div class="top-buttons">
+            <a href="/dashboard" class="btn btn-outline-primary me-2">Dashboard</a>
+            <a href="/logout" class="btn btn-outline-danger">Logout</a>
+        </div>
+
+        <h2>Citizen Applications</h2>
+        <table class="table table-bordered mt-4">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>SSN</th>
+                    <th>Case Number</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="c : ${citizens}">
+                    <td th:text="${c.id}">1</td>
+                    <td th:text="${c.fullName}">John Doe</td>
+                    <td th:text="${c.email}">john@example.com</td>
+                    <td th:text="${c.ssn}">123456789</td>
+                    <td th:text="${c.caseNumber}">123</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

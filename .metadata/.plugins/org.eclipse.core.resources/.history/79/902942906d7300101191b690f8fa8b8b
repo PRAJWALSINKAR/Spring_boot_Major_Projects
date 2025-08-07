@@ -1,0 +1,40 @@
+package prajwal.in.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.entity.CitizenEntity;
+import prajwal.in.repo.CitizenRepo;
+
+@Controller
+@RequestMapping("/application")
+public class Citizen_ApplicationController {
+
+    @Autowired
+    private CitizenRepo citizenRepo;
+
+    @GetMapping("/create")
+    public String showCreateForm(Model model) {
+        model.addAttribute("citizen", new CitizenEntity());
+        return "create_application"; // File: templates/create_application.html
+    }
+
+    @PostMapping("/save")
+    public String saveCitizen(@ModelAttribute CitizenEntity citizen) {
+        String randomCaseNum = String.valueOf((int)(Math.random() * 900) + 100);
+        citizen.setCaseNumber(randomCaseNum);
+        citizenRepo.save(citizen);
+        return "redirect:/application/view";
+    }
+
+    @GetMapping("/view")
+    public String viewCitizens(Model model) {
+        List<CitizenEntity> list = citizenRepo.findAll();
+        model.addAttribute("citizens", list);
+        return "view_applications"; // File: templates/view_applications.html
+    }
+}

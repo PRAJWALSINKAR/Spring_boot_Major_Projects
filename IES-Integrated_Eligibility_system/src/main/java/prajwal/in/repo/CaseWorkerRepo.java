@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CaseWorkerRepo extends JpaRepository<CaseWorker, Long> {
-    Optional<CaseWorker> findByEmail(String email);
 
 	Optional<CaseWorker> findByResetToken(String token);
+	 Optional<CaseWorker> findByEmail(String email);
 	List<CaseWorker> findByEmailContainingIgnoreCase(String email);// for search functionalit
 }

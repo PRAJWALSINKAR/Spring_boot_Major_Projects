@@ -1,0 +1,57 @@
+package prajwal.in.controller;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.entity.CitizenEntity;
+import prajwal.in.repo.CitizenRepo;
+
+@Controller
+@RequestMapping("/application")
+public class ApplicationController {
+
+    @Autowired
+    private CitizenRepo citizenRepo;
+
+    // 1. Show the form
+    @GetMapping("/create")
+    public String showForm(Model model) {
+        model.addAttribute("citizen", new CitizenEntity());
+        return "create_application"; // Thymeleaf template name
+    }
+
+    // 2. Handle form submit
+    @PostMapping("/save")
+    public String saveCitizen(@ModelAttribute("citizen") CitizenEntity citizen) {
+        // Generate 3-digit random case number
+        String caseNum = String.valueOf((int)(Math.random() * 900) + 100);
+        citizen.setCaseNumber(caseNum);
+        citizenRepo.save(citizen);
+        return "redirect:/application/view";
+    }
+
+    // 3. View all applications
+    @GetMapping("/view")
+    public String viewApplications(Model model) {
+        List<CitizenEntity> citizens = citizenRepo.findAll();
+        model.addAttribute("citizens", citizens);
+        return "view_applications"; // Thymeleaf template name
+    }
+
+    // Optional: Search (Not yet implemented fully)
+    @GetMapping("/search")
+    public String searchCitizens(
+            @RequestParam(required = false) String fullName,
+            @RequestParam(required = false) String ssn,
+            Model model
+    ) {
+        List<CitizenEntity> citizens = citizenRepo.findAll(); // Replace with real filter logic
+        model.addAttribute("citizens", citizens);
+        return "view_applications";
+    }
+}

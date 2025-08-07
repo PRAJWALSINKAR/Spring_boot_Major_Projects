@@ -1,0 +1,84 @@
+package prajwal.in.controller;
+
+import jakarta.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.dto.CitizenDTO;
+import prajwal.in.service.CitizenService;
+
+import java.util.List;
+
+@Controller
+@RequestMapping("/citizen")
+public class CitizenController {
+
+    @Autowired
+    private CitizenService citizenService;
+
+    // Show create application form
+    @GetMapping("/create")
+    public String showCreateForm(Model model, HttpSession session) {
+        String email = (String) session.getAttribute("email");
+
+        // 🔒 Session check
+        if (email == null || !"CASEWORKER".equals(session.getAttribute("role"))) {
+            return "redirect:/login";
+        }
+
+        model.addAttribute("citizen", new CitizenDTO());
+        return "create-citizen";
+    }
+
+    // Handle form submit
+    @PostMapping("/submit")
+    public String submitCitizenForm(@ModelAttribute("citizen") CitizenDTO citizenDTO,
+                                     HttpSession session,
+                                     Model model) {
+        String email = (String) session.getAttribute("email");
+
+        // 🔒 Session check
+        if (email == null || !"CASEWORKER".equals(session.getAttribute("role"))) {
+            return "redirect:/login";
+        }
+
+        String resultMsg = citizenService.createCitizen(citizenDTO, email);
+        model.addAttribute("msg", resultMsg);
+
+        return "create-citizen";  // stay on same page with message
+    }
+
+    // View citizens created by this caseworker
+    @GetMapping("/view")
+    public String viewCitizens(Model model, HttpSession session) {
+        String email = (String) session.getAttribute("email");
+
+        // 🔒 Session check
+        if (email == null || !"CASEWORKER".equals(session.getAttribute("role"))) {
+            return "redirect:/login";
+        }
+
+        List<CitizenDTO> list = citizenService.getCitizensByCaseWorker(email);
+        model.addAttribute("citizens", list);
+
+        return "view-citizens";
+    }
+
+    // Optional: view by case number
+    @GetMapping("/view/{caseNumber}")
+    public String viewByCaseNumber(@PathVariable String caseNumber, Model model, HttpSession session) {
+        String email = (String) session.getAttribute("email");
+
+        // 🔒 Session check
+        if (email == null || !"CASEWORKER".equals(session.getAttribute("role"))) {
+            return "redirect:/login";
+        }
+
+        CitizenDTO dto = citizenService.getCitizenByCaseNumber(caseNumber);
+        model.addAttribute("citizen", dto);
+        return "citizen-details";
+    }
+}

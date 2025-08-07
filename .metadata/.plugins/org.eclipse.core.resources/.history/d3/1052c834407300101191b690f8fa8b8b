@@ -1,0 +1,86 @@
+package prajwal.in.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpSession;
+import prajwal.in.dto.CaseWorkerRequest;
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.service.CaseWorkerService;
+
+@Controller
+@RequestMapping("/caseworker")
+public class CaseWorkerController {
+
+    @Autowired
+    private CaseWorkerService caseWorkerService;
+
+    @GetMapping("/register-form")
+    public String showRegistrationForm(Model model) {
+        model.addAttribute("caseworker", new CaseWorkerRequest());
+        return "register-caseworker";
+    }
+
+    @PostMapping("/save")
+    public String saveCaseworker(@ModelAttribute("caseworker") CaseWorkerRequest form, Model model) {
+
+        boolean isSaved = caseWorkerService.registerCaseWorker(form);
+
+        if (isSaved) {
+            model.addAttribute("succMsg", "Caseworker account created. Check email for temp password.");
+        } else {
+            model.addAttribute("errMsg", "Failed to create caseworker. Email may already exist.");
+        }
+
+        return "register-caseworker";
+    }
+    
+    @GetMapping("/view")
+    public String viewCaseworkers(@RequestParam(value = "email", required = false) String email, Model model) {
+        List<CaseWorker> list = (email != null && !email.isEmpty())
+            ? caseWorkerService.searchByEmail(email)
+            : caseWorkerService.findAll();
+
+        model.addAttribute("caseworkers", list);
+        return "view-caseworkers";
+    }
+    @GetMapping("/edit")
+    public String editLoggedInCaseworker(HttpSession session, Model model) {
+        Long caseworkerId = (Long) session.getAttribute("userId");
+        if (caseworkerId == null) {
+            return "redirect:/login"; // or handle unauthorized
+        }
+
+        caseWorkerService.findById(caseworkerId).ifPresent(worker -> model.addAttribute("caseworker", worker));
+        return "edit-caseworker";
+    }
+
+
+    @GetMapping("/delete/{id}")
+    public String deleteCaseworker(@PathVariable Long id) {
+        caseWorkerService.deleteCaseWorker(id);
+        return "redirect:/caseworker/view";
+    }
+
+    @GetMapping("/toggle-status/{id}")
+    public String toggleStatus(@PathVariable Long id) {
+        caseWorkerService.toggleCaseWorkerStatus(id);
+        return "redirect:/caseworker/view";
+    }
+
+    @GetMapping("/edit/{id}")
+    public String editCaseworker(@PathVariable Long id, Model model) {
+        caseWorkerService.findById(id).ifPresent(worker -> model.addAttribute("caseworker", worker));
+        return "edit-caseworker";
+    }
+    @PostMapping("/update")
+    public String updateCaseworker(@ModelAttribute("caseworker") CaseWorker worker) {
+        caseWorkerService.updateCaseWorker(worker);
+        return "redirect:/caseworker/view";
+    }
+
+}

@@ -122,10 +122,15 @@ public class CaseWorkerServiceImpl implements CaseWorkerService {
         String token = UUID.randomUUID().toString();
         worker.setResetToken(token);
 
-        String body = "<h2>Temporary Password: </h2>" + tempPwd +
-                      "<br><a href='http://localhost:8080/reset-password?token=" + token + "'>Reset Password</a>";
+        String resetLink = "http://localhost:8080/reset-password?token=" + token;
 
-        boolean emailSent = emailUtils.sendEmail(form.getEmail(), "Reset Your Password", body);
+        String subject = "Reset Your IES Password";
+        String body = "<h2>Welcome to IES Portal</h2>"
+                    + "<p><strong>Temporary Password:</strong> " + tempPwd + "</p>"
+                    + "<p>Click below to reset your password:</p>"
+                    + "<a href='" + resetLink + "'>Reset Password</a>";
+
+        boolean emailSent = emailUtils.sendEmail(form.getEmail(), subject, body);
 
         if (emailSent) {
             caseWorkerRepo.save(worker);

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>View Applications</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+    <div class="container-fluid d-flex align-items-center">
+        <!-- Back Button -->
+        <button onclick="history.back()" class="btn btn-outline-light me-3" title="Go Back">
+            &#8592;
+        </button>
+
+        <!-- Logo -->
+        <a class="navbar-brand d-flex align-items-center" href="#">
+            <img th:src="@{/images/myName-Logo.png}" alt="Logo" width="40" height="40" class="me-2"/>
+            <span>IES</span>
+        </a>
+
+        <!-- Dashboard & Logout -->
+        <div class="ms-auto">
+            <a href="/dashboard" class="btn btn-light btn-sm me-2">Dashboard</a>
+            <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Page Header -->
+<div class="container mt-4">
+    <h3 class="text-center mb-4">View Applications</h3>
+
+    <!-- Search Form -->
+    <form th:action="@{/application/search}" method="get" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <input type="text" name="fullName" class="form-control" placeholder="Search by Name">
+        </div>
+        <div class="col-md-4">
+            <input type="text" name="ssn" class="form-control" placeholder="Search by SSN">
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary w-100">Search</button>
+        </div>
+    </form>
+
+    <!-- Applications Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped text-center align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Full Name</th>
+                    <th>SSN</th>
+                    <th>DOB</th>
+                    <th>Gender</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Case Number</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="app : ${citizens}">
+                    <td th:text="${app.fullName}"></td>
+                    <td th:text="${app.ssn}"></td>
+                    <td th:text="${#dates.format(app.dob, 'yyyy-MM-dd')}"></td>
+                    <td th:text="${app.gender}"></td>
+                    <td th:text="${app.phone}"></td>
+                    <td th:text="${app.email}"></td>
+                    <td th:text="${app.caseNumber}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(citizens)}">
+                    <td colspan="7">No records found</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

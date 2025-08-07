@@ -8,21 +8,31 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 public class AdminInterceptor implements HandlerInterceptor {
+	@Override
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+	    HttpSession session = request.getSession(false);
+	    if (session == null) {
+	        response.sendRedirect("/login");
+	        return false;
+	    }
 
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+	    String role = (String) session.getAttribute("role");
+	    String uri = request.getRequestURI();
 
-        HttpSession session = request.getSession(false);
+	    // Allow caseworker access to their own profile edit
+	    if (uri.equals("/caseworker/edit")) {
+	        if ("CASEWORKER".equals(role)) {
+	            return true; // Allow caseworker
+	        }
+	    }
 
-        if (session != null) {
-            String role = (String) session.getAttribute("role");
-            if ("ADMIN".equals(role)) {
-                return true; // allow
-            }
-        }
+	    // Only allow admin for other caseworker paths
+	    if (!"ADMIN".equals(role)) {
+	        response.sendRedirect("/access-denied"); // Or 403 page
+	        return false;
+	    }
 
-        // Block access
-        response.sendRedirect("/403");
-        return false;
-    }
+	    return true;
+	}
 }
+

@@ -49,40 +49,65 @@
     </style>
 </head>
 <body>
+
+<!-- Header -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+    <a class="navbar-brand d-flex align-items-center" href="#">
+        <img th:src="@{/images/myName-Logo.png}" alt="Logo" width="40" height="40" class="me-2"/>
+        <span>IES</span>
+    </a>
+
+    <!-- Right side -->
+    <div class="ms-auto dropdown">
+        <a class="btn btn-secondary dropdown-toggle d-flex align-items-center" href="#" role="button" id="profileDropdown"
+           data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa fa-user-circle me-2"></i> Profile
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+            <li><a class="dropdown-item" href="/caseworker/edit">Profile</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
+        </ul>
+    </div>
+</nav>
+
+
+<!-- Sidebar + Main -->
 <div class="d-flex">
     <nav class="sidebar">
         <h3 class="text-center">IES</h3>
-   <ul class="nav flex-column">
-    <li class="nav-item">
-        <a href="#" class="nav-link"><i class="fa fa-home"></i> Dashboard</a>
-    </li>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a href="#" class="nav-link"><i class="fa fa-home"></i> Dashboard</a>
+            </li>
 
-    <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="appRegDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa fa-book"></i> Application Registration
-        </a>
-        <ul class="dropdown-menu" aria-labelledby="appRegDropdown">
-            <li><a class="dropdown-item" href="#" onclick="alert('Create Application - Coming Soon')">Create Application</a></li>
-            <li><a class="dropdown-item" href="#" onclick="loadApplications()">View Applications</a></li>
-        </ul>
-    </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="appRegDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-book"></i> Application Registration
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="appRegDropdown">
+                  <li><a class="dropdown-item" href="/application/create">Create Application</a></li>
+                 <li><a class="dropdown-item" href="/application/view">View Applications</a></li>
 
-    <!-- Admin Menus visible only to Admin -->
-    <li th:if="${session.role == 'ADMIN'}" class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa fa-user-shield"></i> Admin
-        </a>
-        <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-            <li><a class="dropdown-item" href="/caseworker/register-form">Create Account</a></li>
-            <li><a class="dropdown-item" href="/caseworker/view">View Accounts</a></li>
-            <li><a class="dropdown-item" href="/plan/create-form">Create Plan</a></li> <!-- ✅ updated -->
-            <li><a class="dropdown-item" href="/plan/view">View Plans</a></li> <!-- ✅ updated -->
+                </ul>
+            </li>
+
+            <!-- Admin Menus visible only to Admin -->
+            <li th:if="${session.role == 'ADMIN'}" class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-user-shield"></i> Admin
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                    <li><a class="dropdown-item" href="/caseworker/register-form">Create Account</a></li>
+                    <li><a class="dropdown-item" href="/caseworker/view">View Accounts</a></li>
+                    <li><a class="dropdown-item" href="/plan/create-form">Create Plan</a></li>
+                    <li><a class="dropdown-item" href="/plan/view">View Plans</a></li>
+                </ul>
+            </li>
         </ul>
-    </li>
-</ul>
-   
     </nav>
 
+    <!-- Main Content -->
     <main class="flex-grow-1">
         <h2>
             Welcome <span th:text="${session.userName}">User</span>
@@ -132,14 +157,14 @@
             <h3>View Applications</h3>
             <table class="table table-striped">
                 <thead>
-                <tr>
-                    <th>S.No</th>
-                    <th>Case Num</th>
-                    <th>Name</th>
-                    <th>Mobile Number</th>
-                    <th>Gender</th>
-                    <th>SSN</th>
-                </tr>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Case Num</th>
+                        <th>Name</th>
+                        <th>Mobile Number</th>
+                        <th>Gender</th>
+                        <th>SSN</th>
+                    </tr>
                 </thead>
                 <tbody id="applicationsTableBody">
                 </tbody>

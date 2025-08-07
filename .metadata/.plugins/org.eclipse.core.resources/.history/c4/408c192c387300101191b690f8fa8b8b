@@ -1,0 +1,122 @@
+package prajwal.in.controller;
+
+import jakarta.servlet.http.HttpSession;
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.entity.Admin;
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.repo.AdminRepo;
+import prajwal.in.repo.CaseWorkerRepo;
+import prajwal.in.util.EmailUtils;
+
+@Controller
+public class LoginController {
+
+    @Autowired
+    private AdminRepo adminRepo;
+
+    @Autowired
+    private CaseWorkerRepo caseWorkerRepo;
+
+    @GetMapping({"/", "/login"})
+    public String showLoginPage() {
+        return "login"; // Thymeleaf login.html page
+    }
+
+  
+    @PostMapping("/login")
+    public String loginCheck(@RequestParam String email,
+                             @RequestParam String password,
+                             Model model,
+                             HttpSession session) {
+
+        // 1. Check for Admin
+        Admin admin = adminRepo.findByEmail(email).orElse(null);
+        if (admin != null && admin.getPassword().equals(password)) {
+            session.setAttribute("email", email);
+            session.setAttribute("userName", admin.getName());
+            session.setAttribute("role", "ADMIN");
+            return "redirect:/dashboard";
+        }
+
+        // 2. Check for CaseWorker
+        CaseWorker worker = caseWorkerRepo.findByEmail(email).orElse(null);
+        if (worker != null) {
+            // First check for null password
+            if (worker.getPassword() == null) {
+                model.addAttribute("error", "Your password is not set. Please check your email to reset it.");
+                return "login";
+            }
+
+            // Then check if account is locked
+            if (!"ACTIVE".equals(worker.getAccStatus())) {
+                model.addAttribute("error", "Your account is locked. Please reset your password to activate it OR Contact to Admin.");
+                return "login";
+            }
+
+            // Then check password
+            if (password.equals(worker.getPassword())) {
+                session.setAttribute("email", email);
+                session.setAttribute("userName", worker.getName());
+                session.setAttribute("role", "CASEWORKER");
+                return "redirect:/dashboard";
+            } else {
+                model.addAttribute("error", "Invalid email or password");
+                return "login";
+            }
+        }
+
+        // If not admin or caseworker
+        model.addAttribute("error", "Invalid email or password");
+        return "login";
+    }
+
+
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/login";
+    }
+    @GetMapping("/forgot-password")
+    public String showForgotPasswordPage() {
+        return "forgot-password"; // Thymeleaf page (you'll create this next)
+    }
+
+    @PostMapping("/forgot-password")
+    public String handleForgotPassword(@RequestParam String email, Model model) {
+        // 1. Check in Admin table
+        Optional<Admin> adminOpt = adminRepo.findByEmail(email);
+        if (adminOpt.isPresent()) {
+            Admin admin = adminOpt.get();
+            String body = "<h3>Hi " + admin.getName() + ",</h3>"
+                    + "<p>Your current password is: <strong>" + admin.getPassword() + "</strong></p>"
+                    + "<p><a href='http://localhost:8080/login'>Click here to Login</a></p>";
+            new EmailUtils().sendEmail(admin.getEmail(), "Your Admin Account Password", body);
+            model.addAttribute("msg", "Password sent to your registered email.");
+            return "forgot-password";
+        }
+
+        // 2. Check in CaseWorker table
+        Optional<CaseWorker> workerOpt = caseWorkerRepo.findByEmail(email);
+        if (workerOpt.isPresent()) {
+            CaseWorker worker = workerOpt.get();
+            String body = "<h3>Hi " + worker.getName() + ",</h3>"
+                    + "<p>Your current password is: <strong>" + worker.getPassword() + "</strong></p>"
+                    + "<p><a href='http://localhost:8080/login'>Click here to Login</a></p>";
+            new EmailUtils().sendEmail(worker.getEmail(), "Your CaseWorker Account Password", body);
+            model.addAttribute("msg", "Password sent to your registered email.");
+            return "forgot-password";
+        }
+
+        // 3. If not found
+        model.addAttribute("error", "Invalid Email ID");
+        return "forgot-password";
+    }
+
+}

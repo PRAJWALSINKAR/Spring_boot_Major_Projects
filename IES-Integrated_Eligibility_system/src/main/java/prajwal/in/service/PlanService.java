@@ -11,4 +11,6 @@ public interface PlanService {
 	    Optional<Plan> getPlanById(Long id);
 	    void deletePlan(Long id);
 	    void togglePlanStatus(Long id);
+	    List<Plan> searchByName(String name);
+
 	}

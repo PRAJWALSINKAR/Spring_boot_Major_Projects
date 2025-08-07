@@ -1,0 +1,113 @@
+package prajwal.in.service;
+
+import java.util.*;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+
+import prajwal.in.dto.CaseWorkerRequest;
+import prajwal.in.dto.LoginRequest;
+import prajwal.in.entity.Admin;
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.repo.AdminRepo;
+import prajwal.in.repo.CaseWorkerRepo;
+import prajwal.in.util.EmailUtils;
+
+@Service
+public class AdminServiceImpl implements AdminService {
+
+    @Autowired
+    private CaseWorkerRepo caseWorkerRepo;
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Autowired
+    private EmailUtils emailUtils;
+
+    private final AdminRepo adminRepo;
+
+    public AdminServiceImpl(AdminRepo adminRepo) {
+        this.adminRepo = adminRepo;
+    }
+
+    @Override
+    public Admin createAdmin(Admin admin) {
+        return adminRepo.save(admin); // Save plain for now
+    }
+
+    @Override
+    public Optional<Admin> findByEmail(String email) {
+        return adminRepo.findByEmail(email);
+    }
+
+    @Override
+    public ResponseEntity<Map<String, String>> login(LoginRequest request) {
+        Optional<Admin> optional = adminRepo.findByEmail(request.getEmail());
+        if (optional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid credentials: email not found"));
+        }
+
+        Admin admin = optional.get();
+
+        if (!request.getPassword().equals(admin.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid credentials: wrong password"));
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Login successful",
+                "role", "ADMIN"
+        ));
+    }
+
+    @Override
+    public List<Admin> findAll() {
+        return adminRepo.findAll();
+    }
+
+    @Override
+    public ResponseEntity<String> createCaseWorker(CaseWorkerRequest request) {
+        if (caseWorkerRepo.findByEmail(request.getEmail()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Case Worker already exists with this email");
+        }
+
+        // Generate temp password and token (just to embed in email)
+        String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+        String token = UUID.randomUUID().toString(); // Reset token to map in DB
+
+        // Create and save worker
+        CaseWorker worker = new CaseWorker();
+        worker.setName(request.getName());
+        worker.setEmail(request.getEmail());
+        worker.setPhoneNumber(request.getPhoneNumber());
+        worker.setGender(request.getGender());
+        worker.setDob(request.getDob());
+        worker.setSsn(request.getSsn());
+        worker.setPassword(tempPassword);           // Store as plain
+        worker.setTempPassword(tempPassword);       // For checking during reset
+        worker.setResetToken(token);                // Used in URL
+        worker.setAccStatus("LOCKED");
+
+        caseWorkerRepo.save(worker);
+
+        // Updated Email Body
+        String resetLink = "http://localhost:8080/reset-password?token=" + token;
+        String body = String.format(
+                "<h3>Hi %s,</h3>" +
+                "<p>Your Case Worker account has been created successfully.</p>" +
+                "<p><strong>Temporary Password:</strong> %s</p>" +
+                "<p><a href='%s'>Click here to reset your password</a></p>" +
+                "<p>After resetting, your account will be unlocked.</p>" +
+                "<br><p>Thanks!</p>",
+                request.getName(), tempPassword, resetLink
+        );
+
+        emailUtils.sendEmail(request.getEmail(), "Case Worker Account Created", body);
+        return ResponseEntity.ok("Case Worker created and email sent.");
+    }
+}

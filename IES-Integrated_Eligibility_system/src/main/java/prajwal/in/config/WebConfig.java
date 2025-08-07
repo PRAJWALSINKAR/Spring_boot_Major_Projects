@@ -19,5 +19,7 @@ public class WebConfig {
                         .allowedHeaders("*"); // Allow all headers
             }
         };
+    
     }
+    
 }

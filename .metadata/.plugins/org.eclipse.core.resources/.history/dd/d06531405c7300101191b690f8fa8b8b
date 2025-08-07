@@ -1,0 +1,62 @@
+package prajwal.in.controller;
+
+import java.security.Principal;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.entity.CitizenEntity;
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.repo.CaseWorkerRepo;
+import prajwal.in.repo.CitizenRepo;
+
+@Controller
+@RequestMapping("/application")
+public class ApplicationController {
+
+    @Autowired
+    private CitizenRepo citizenRepo;
+
+    @Autowired
+    private CaseWorkerRepo caseWorkerRepo;
+
+    // Show application form
+    @GetMapping("/create")
+    public String showApplicationForm(Model model) {
+        model.addAttribute("citizen", new CitizenEntity());
+        return "application-form"; // application-form.html
+    }
+
+    // Save new citizen application
+    @PostMapping("/save")
+    public String saveApplication(@ModelAttribute("citizen") CitizenEntity citizen, Principal principal) {
+        String email = principal.getName();
+        CaseWorker caseWorker = caseWorkerRepo.findByEmail(email).orElse(null);
+
+        if (caseWorker != null) {
+            citizen.setCreatedBy(caseWorker);
+            // Generate a 3-digit case number (example logic)
+            citizen.setCaseNumber(String.valueOf((int)(Math.random() * 900 + 100)));
+            citizenRepo.save(citizen);
+        }
+
+        return "redirect:/application/view";
+    }
+
+    // View all applications created by logged-in case worker
+    @GetMapping("/view")
+    public String viewApplications(Model model, Principal principal) {
+        String email = principal.getName();
+        CaseWorker caseWorker = caseWorkerRepo.findByEmail(email).orElse(null);
+
+        if (caseWorker != null) {
+            List<CitizenEntity> citizens = citizenRepo.findByCreatedBy(caseWorker);
+            model.addAttribute("citizens", citizens);
+        }
+
+        return "view-applications"; // view-applications.html
+    }
+}

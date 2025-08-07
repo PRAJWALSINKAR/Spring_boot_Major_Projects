@@ -23,19 +23,22 @@ public class PlanController {
     @PostMapping("/save")
     public String savePlan(@ModelAttribute("plan") Plan plan, Model model) {
         boolean saved = planService.savePlan(plan);
-        if (saved) {
-            model.addAttribute("succMsg", "Plan saved successfully!");
-        } else {
-            model.addAttribute("errMsg", "Failed to save plan.");
-        }
-        return "create-plan";
+
+        // ✅ Always redirect to /plan/view after update/save
+        return "redirect:/plan/view";
     }
 
     @GetMapping("/view")
-    public String viewPlans(Model model) {
-        model.addAttribute("plans", planService.getAllPlans());
+    public String viewPlans(@RequestParam(value = "name", required = false) String name, Model model) {
+        if (name != null && !name.isEmpty()) {
+            model.addAttribute("plans", planService.searchByName(name));
+            model.addAttribute("searchName", name);
+        } else {
+            model.addAttribute("plans", planService.getAllPlans());
+        }
         return "view-plan";
     }
+
 
     @GetMapping("/edit/{id}")
     public String editPlan(@PathVariable Long id, Model model) {

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IES Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap CSS & Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6fa;
+        }
+        .sidebar {
+            width: 220px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background-color: #343a40;
+            color: white;
+            padding-top: 1rem;
+            z-index: 1050;
+        }
+        .sidebar h3 {
+            font-size: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #495057;
+        }
+        .sidebar .nav-link,
+        .sidebar .dropdown-item {
+            color: white;
+            background: none;
+            font-weight: 500;
+        }
+        .sidebar .nav-link:hover, 
+        .sidebar .dropdown-item:hover {
+            background-color: #495057 !important;
+            color: #fff;
+        }
+        .sidebar .dropdown-menu {
+            background-color: #343a40 !important;
+            border: none;
+            box-shadow: none;
+            position: static !important;
+            float: none;
+        }
+        .sidebar .dropdown-menu .dropdown-item {
+            padding-left: 32px;
+        }
+        main {
+            margin-left: 220px;
+            padding: 20px;
+        }
+        .card-title {
+            font-weight: 600;
+        }
+        /* Remove ugly white-block "focus" indicators on click in the sidebar */
+        .sidebar .dropdown.show .nav-link,
+        .sidebar .dropdown.show .dropdown-toggle {
+            background-color: #495057 !important;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3" style="margin-left:220px;">
+    <a class="navbar-brand d-flex align-items-center" href="#">
+        <img th:src="@{/images/myName-Logo.png}" alt="Logo" width="40" height="40" class="me-2"/>
+        <span>IES</span>
+    </a>
+    <div class="ms-auto dropdown">
+        <a class="btn btn-secondary dropdown-toggle d-flex align-items-center" href="#" role="button" id="profileDropdown"
+           data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa fa-user-circle me-2"></i> Profile
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+            <li><a class="dropdown-item" href="/caseworker/edit">Edit Profile</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Sidebar -->
+<div class="d-flex">
+    <nav class="sidebar">
+        <h3 class="text-center mb-4">IES</h3>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a href="/dashboard" class="nav-link"><i class="fa fa-home"></i> Dashboard</a>
+            </li>
+
+            <!-- Sidebar Dropdown (Fixed Style) -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="appRegDropdown" role="button"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-book"></i> Application Registration
+                </a>
+                <ul class="dropdown-menu show-on-sidebar" aria-labelledby="appRegDropdown">
+                    <li><a class="dropdown-item" href="/application/register">Create Application</a></li>
+                    <li><a class="dropdown-item" href="/application/view">View Applications</a></li>
+                </ul>
+            </li>
+
+            <!-- Admin Menus -->
+            <li th:if="${session.role == 'ADMIN'}" class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-user-shield"></i> Admin
+                </a>
+                <ul class="dropdown-menu show-on-sidebar" aria-labelledby="adminDropdown">
+                    <li><a class="dropdown-item" href="/caseworker/register-form">Create Account</a></li>
+                    <li><a class="dropdown-item" href="/caseworker/view">View Accounts</a></li>
+                    <li><a class="dropdown-item" href="/plan/create-form">Create Plan</a></li>
+                    <li><a class="dropdown-item" href="/plan/view">View Plans</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <h2>
+            Welcome <span th:text="${session.userName}">User</span>
+            <small class="text-muted" th:text="${session.role == 'ADMIN'} ? '(Admin Access)' : '(Case Worker Access)'"></small>
+        </h2>
+
+        <!-- Dashboard Metrics -->
+        <div class="row text-white mt-4">
+            <div class="col-md-3">
+                <div class="card bg-primary mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Plans Available</h5>
+                        <p class="card-text h3" th:text="${planCount}">0</p>
+                        <small>Jan 2022 - May 2023</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Citizens Approved</h5>
+                        <p class="card-text h3" th:text="${citizensApproved}">0</p>
+                        <small>Jan 2022 - May 2023</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Citizens Denied</h5>
+                        <p class="card-text h3" th:text="${citizensDenied}">0</p>
+                        <small>Jan 2022 - May 2023</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Benefits Given</h5>
+                        <p class="card-text h3">$<span th:text="${benefitsGiven}">0</span></p>
+                        <small>Jan 2022 - May 2023</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Sidebar dropdown fix: force dropdown to behave like a sidebar expand
+    document.querySelectorAll('.sidebar .dropdown-toggle').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            let parent = el.closest('.dropdown');
+            if (!parent) return;
+            // Hide all others
+            document.querySelectorAll('.sidebar .dropdown').forEach(function (dd) {
+                if (dd !== parent) dd.classList.remove('show');
+            });
+            parent.classList.toggle('show');
+            let menu = parent.querySelector('.dropdown-menu');
+            if(menu) menu.classList.toggle('show');
+        });
+    });
+
+    // Optional: Hide dropdown when clicking outside the sidebar
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.sidebar')) {
+            document.querySelectorAll('.sidebar .dropdown-menu').forEach(function (menu) {
+                menu.classList.remove('show');
+            });
+            document.querySelectorAll('.sidebar .dropdown').forEach(function (dd) {
+                dd.classList.remove('show');
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

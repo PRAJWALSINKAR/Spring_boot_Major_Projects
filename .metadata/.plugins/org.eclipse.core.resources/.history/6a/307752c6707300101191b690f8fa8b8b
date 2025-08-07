@@ -1,0 +1,78 @@
+package prajwal.in.controller;
+
+import java.security.Principal;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.entity.CitizenEntity;
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.repo.CitizenRepo;
+import prajwal.in.repo.CaseWorkerRepo;
+
+@Controller
+@RequestMapping("/application")
+public class Citizen_ApplicationController {
+
+    @Autowired
+    private CitizenRepo citizenRepo;
+
+    @Autowired
+    private CaseWorkerRepo caseWorkerRepo;
+
+    @GetMapping("/create")
+    public String showCreateForm(Model model) {
+        model.addAttribute("citizen", new CitizenEntity());
+        return "create_application";
+    }
+
+    @PostMapping("/save")
+    public String saveCitizen(@ModelAttribute CitizenEntity citizen, Principal principal, Model model) {
+        String ssn = citizen.getSsn();
+
+        // Validate SSN: must start with '123' and be exactly 8 digits after '123' (total 8 digits)
+        if (ssn == null || !ssn.matches("^123\\d{5}$")) {
+            model.addAttribute("error", "Application not acceptable. You are not from Rosilad state or SSN is invalid.");
+            return "create_application"; // Return to form with error
+        }
+
+        String email = principal.getName();
+        CaseWorker currentWorker = caseWorkerRepo.findByEmail(email).orElse(null);
+
+        if (currentWorker == null) {
+            model.addAttribute("error", "Current CaseWorker not found. Please login again.");
+            return "create_application";
+        }
+
+        // Set creator
+        citizen.setCreatedBy(currentWorker);
+
+        // Generate simple case number (8 digit)
+        String randomCaseNum = String.valueOf((int) (Math.random() * 90000000) + 10000000);
+        citizen.setCaseNumber(randomCaseNum);
+
+        // Save citizen application
+        citizenRepo.save(citizen);
+
+        return "redirect:/application/view";
+    }
+
+    @GetMapping("/view")
+    public String viewCitizens(Model model, Principal principal) {
+        String email = principal.getName();
+        CaseWorker currentWorker = caseWorkerRepo.findByEmail(email).orElse(null);
+
+        if (currentWorker == null) {
+            model.addAttribute("error", "Current CaseWorker not found. Please login again.");
+            // Depending on your flow, you might redirect to login or show empty list
+            return "view_applications"; // or redirect
+        }
+
+        List<CitizenEntity> list = citizenRepo.findByCreatedBy(currentWorker); // only get own data
+        model.addAttribute("citizens", list);
+        return "view_applications";
+    }
+}
