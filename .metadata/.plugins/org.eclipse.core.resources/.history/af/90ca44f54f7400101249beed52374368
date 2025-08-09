@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Forgot Password</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background: #f2f2f2;
+        }
+        .forgot-container {
+            width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+            display: block;
+            margin: 0 auto 20px auto;
+        }
+        .btn-custom {
+            background-color: #6c63ff;
+            color: white;
+            width: 100%;
+        }
+        .msg {
+            color: green;
+            text-align: center;
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="forgot-container">
+    <div class="text-center">
+        <img th:src="@{/images/myName-Logo.png}" alt="Logo" width="80" height="80" class="logo"/>
+    </div>
+
+    <h4 class="text-center mb-4">Forgot Password</h4>
+
+    <form th:action="@{/forgot-password}" method="post">
+        <div class="form-group">
+            <input type="email" name="email" class="form-control" placeholder="Enter Email Id" required>
+        </div>
+        <button type="submit" class="btn btn-custom">Recover Password</button>
+    </form>
+
+    <p class="msg" th:text="${msg}"></p>
+    <p class="error" th:text="${error}"></p>
+
+    <div class="text-center mt-3">
+        <a th:href="@{/login}">Sign In</a>
+    </div>
+</div>
+
+</body>
+</html>

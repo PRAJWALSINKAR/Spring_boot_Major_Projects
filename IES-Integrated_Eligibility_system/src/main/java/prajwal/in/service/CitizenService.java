@@ -1,14 +1,16 @@
 package prajwal.in.service;
 
-import java.util.List;
-
 import prajwal.in.dto.CitizenDTO;
 
+import java.util.List;
+
 public interface CitizenService {
+    // For caseworker or admin, pass email and role
+    String createCitizen(CitizenDTO dto, String email, String role);
 
-    String createCitizen(CitizenDTO dto, String caseWorkerEmail);  // returns case number or error
+    // Fetch apps for user by their email and role
+    List<CitizenDTO> getCitizensByUser(String email, String role);
 
-    List<CitizenDTO> getCitizensByCaseWorker(String email);
-
+    // Fetch by case number (for details etc.)
     CitizenDTO getCitizenByCaseNumber(String caseNumber);
 }

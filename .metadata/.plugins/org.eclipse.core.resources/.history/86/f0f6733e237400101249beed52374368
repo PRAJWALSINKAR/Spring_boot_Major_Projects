@@ -1,0 +1,14 @@
+package prajwal.in.service;
+
+import java.util.List;
+
+import prajwal.in.dto.CitizenDTO;
+
+public interface CitizenService {
+
+    public boolean saveCitizen(Long caseWorkerId, CitizenDTO dto);
+
+    public List<CitizenDTO> getCitizensByCaseWorkerId(Long caseWorkerId);
+
+    public List<CitizenDTO> getAllCitizens();  // For Admin access
+}

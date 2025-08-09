@@ -1,0 +1,98 @@
+package prajwal.in.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.repo.PlanRepo;
+import prajwal.in.service.CitizenInfoService;
+
+@Controller
+@RequestMapping("/dc")
+public class DataCollectionController {
+
+    @Autowired
+    private CitizenInfoService infoService;
+
+    @Autowired
+    private PlanRepo planRepo;
+
+    // =============================
+    // Step 1: PLAN SELECTION - Start
+    // =============================
+
+    // Coming from "Process" button
+    @GetMapping("/start/{caseNumber}")
+    public String startDataCollectionPrefilled(@PathVariable String caseNumber, Model model) {
+        CitizenInfo info = infoService.getByCaseNumber(caseNumber);
+        if (info == null) {
+            info = new CitizenInfo();
+            info.setCaseNumber(caseNumber);
+        }
+        // Plans for dropdown
+        model.addAttribute("citizenInfo", info);
+        model.addAttribute("plans", planRepo.findByActiveSw("Y"));
+        return "dc_plan_selection";
+    }
+
+    // Manual entry (open DC module directly)
+    @GetMapping("/start")
+    public String startDataCollectionManual(Model model) {
+        CitizenInfo info = new CitizenInfo();
+        model.addAttribute("citizenInfo", info);
+        model.addAttribute("plans", planRepo.findByActiveSw("Y"));
+        return "dc_plan_selection";
+    }
+
+    // Save Plan Selection and go to Step 2 (Income)
+    @PostMapping("/plan/save")
+    public String savePlanSelection(@ModelAttribute CitizenInfo info) {
+        infoService.saveOrUpdate(info);
+        return "redirect:/dc/income/" + info.getCaseNumber();
+    }
+
+    // =============================
+    // Step 2: INCOME DETAILS
+    // =============================
+
+    @GetMapping("/income/{caseNumber}")
+    public String showIncomeForm(@PathVariable String caseNumber, Model model) {
+        CitizenInfo info = infoService.getByCaseNumber(caseNumber);
+        if (info == null) {
+            info = new CitizenInfo();
+            info.setCaseNumber(caseNumber);
+        }
+        model.addAttribute("citizenInfo", info);
+        return "dc_income_details";
+    }
+
+    @PostMapping("/income/save")
+    public String saveIncomeDetails(@ModelAttribute CitizenInfo info) {
+        infoService.saveOrUpdate(info);
+        return "redirect:/dc/education/" + info.getCaseNumber();
+    }
+
+    // =============================
+    // Step 3: EDUCATION DETAILS
+    // =============================
+
+    @GetMapping("/education/{caseNumber}")
+    public String showEducationForm(@PathVariable String caseNumber, Model model) {
+        CitizenInfo info = infoService.getByCaseNumber(caseNumber);
+        if (info == null) {
+            info = new CitizenInfo();
+            info.setCaseNumber(caseNumber);
+        }
+        model.addAttribute("citizenInfo", info);
+        return "dc_education_details";
+    }
+
+    @PostMapping("/education/save")
+    public String saveEducationDetails(@ModelAttribute CitizenInfo info) {
+        infoService.saveOrUpdate(info);
+        // Step 4 to be created later
+        return "redirect:/dc/kids/" + info.getCaseNumber();
+    }
+}

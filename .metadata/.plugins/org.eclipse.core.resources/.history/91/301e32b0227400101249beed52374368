@@ -1,0 +1,18 @@
+package prajwal.in.service;
+
+import java.util.List;
+
+import prajwal.in.dto.CitizenDTO;
+import prajwal.in.entity.Admin;
+import prajwal.in.entity.CitizenEntity;
+
+public interface CitizenService {
+
+    String createCitizen(CitizenDTO dto, String caseWorkerEmail);  // returns case number or error
+
+    List<CitizenDTO> getCitizensByCaseWorker(String email);
+
+    CitizenDTO getCitizenByCaseNumber(String caseNumber);
+    
+    List<CitizenEntity> getCitizensByAdmin(Admin admin);
+}

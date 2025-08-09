@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import prajwal.in.entity.Admin;
 import prajwal.in.entity.CaseWorker;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.entity.Kid;
 import prajwal.in.service.AdminService;
 import prajwal.in.service.CaseWorkerService;
 import prajwal.in.service.ApplicationService;
@@ -70,4 +72,6 @@ public class DashboardController {
         }
         return List.of();
     }
+
+    
 }

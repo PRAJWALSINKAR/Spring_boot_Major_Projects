@@ -1,0 +1,35 @@
+package prajwal.in.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.service.CitizenInfoService;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.repo.PlanRepo;
+
+@Controller
+@RequestMapping("/dc")
+public class DataCollectionController {
+
+    @Autowired
+    private CitizenInfoService infoService;
+    
+    @Autowired
+    private PlanRepo planRepo;
+
+    @GetMapping("/start/{caseNumber}")
+    public String startDataCollection(@PathVariable String caseNumber, Model model) {
+        CitizenInfo info = infoService.getByCaseNumber(caseNumber);
+        if (info == null) {
+            info = new CitizenInfo();
+            info.setCaseNumber(caseNumber);
+        }
+        model.addAttribute("citizenInfo", info);
+        model.addAttribute("plans", planRepo.findByActiveSw("Y"));
+        return "dc_plan_selection";
+    }
+
+    
+}

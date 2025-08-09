@@ -1,18 +1,19 @@
 package prajwal.in.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import prajwal.in.dto.CitizenDTO;
+import prajwal.in.entity.Admin;
+import prajwal.in.entity.CaseWorker;
+import prajwal.in.entity.CitizenEntity;
+import prajwal.in.repo.AdminRepo;
+import prajwal.in.repo.CaseWorkerRepo;
+import prajwal.in.repo.CitizenRepo;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import prajwal.in.dto.CitizenDTO;
-import prajwal.in.entity.CaseWorker;
-import prajwal.in.entity.CitizenEntity;
-import prajwal.in.repo.CaseWorkerRepo;
-import prajwal.in.repo.CitizenRepo;
 
 @Service
 public class CitizenServiceImpl implements CitizenService {
@@ -23,32 +24,27 @@ public class CitizenServiceImpl implements CitizenService {
     @Autowired
     private CaseWorkerRepo caseWorkerRepo;
 
+    @Autowired
+    private AdminRepo adminRepo;
+
     private String generateCaseNumber() {
         Random random = new Random();
-        int num = 100 + random.nextInt(900); // 3-digit number between 100–999
+        int num = 100 + random.nextInt(900); // 100–999
         return String.valueOf(num);
     }
 
     @Override
-    public String createCitizen(CitizenDTO dto, String caseWorkerEmail) {
-
-        // ❌ Reject if SSN does not start with 123
-        if (!dto.getSsn().startsWith("123")) {
+    public String createCitizen(CitizenDTO dto, String email, String role) {
+        // Validate SSN logic
+        if (dto.getSsn() == null || !dto.getSsn().startsWith("123") || dto.getSsn().length() != 8) {
             return "Not a citizen of Rhode Island. Application not applicable.";
         }
 
-        // ❌ Reject if SSN already exists
+        // Check SSN presence
         if (citizenRepo.findBySsn(dto.getSsn()).isPresent()) {
             return "Application rejected: SSN already exists. Citizen already registered.";
         }
 
-        // ✅ Fetch CaseWorker
-        CaseWorker caseWorker = caseWorkerRepo.findByEmail(caseWorkerEmail).orElse(null);
-        if (caseWorker == null) {
-            return "CaseWorker not found.";
-        }
-
-        // ✅ Create Entity and Save
         CitizenEntity entity = new CitizenEntity();
         entity.setFullName(dto.getFullName());
         entity.setEmail(dto.getEmail());
@@ -56,34 +52,59 @@ public class CitizenServiceImpl implements CitizenService {
         entity.setGender(dto.getGender());
         entity.setDob(dto.getDob());
         entity.setSsn(dto.getSsn());
-        entity.setCreatedBy(caseWorker);
         entity.setCaseNumber(generateCaseNumber());
 
-        citizenRepo.save(entity);
+        // Set owner: ADMIN or CASEWORKER
+        if ("ADMIN".equals(role)) {
+            Optional<Admin> adminOpt = adminRepo.findByEmail(email);
+            if (adminOpt.isPresent()) {
+                entity.setCreatedByAdmin(adminOpt.get());
+                entity.setCreatedBy(null);
+            } else {
+                return "Admin not found.";
+            }
+        } else if ("CASEWORKER".equals(role)) {
+            Optional<CaseWorker> workerOpt = caseWorkerRepo.findByEmail(email);
+            if (workerOpt.isPresent()) {
+                entity.setCreatedBy(workerOpt.get());
+                entity.setCreatedByAdmin(null);
+            } else {
+                return "CaseWorker not found.";
+            }
+        } else {
+            return "Invalid user role.";
+        }
 
+        citizenRepo.save(entity);
         return "Application submitted successfully. Case Number: " + entity.getCaseNumber();
     }
 
-
     @Override
-    public List<CitizenDTO> getCitizensByCaseWorker(String email) {
-    	 Optional<CaseWorker> option = caseWorkerRepo.findByEmail(email);
-    	    if (option.isEmpty()) return List.of();
+    public List<CitizenDTO> getCitizensByUser(String email, String role) {
+        List<CitizenEntity> entities = List.of();
 
-    	    CaseWorker caseWorker = option.get();
-    	    List<CitizenEntity> entities = citizenRepo.findByCreatedBy(caseWorker);
-
-    	    return entities.stream().map(entity -> {
-    	        CitizenDTO dto = new CitizenDTO();
-    	        dto.setFullName(entity.getFullName());
-    	        dto.setEmail(entity.getEmail());
-    	        dto.setMobileNumber(entity.getMobileNumber());
-    	        dto.setGender(entity.getGender());
-    	        dto.setDob(entity.getDob());
-    	        dto.setSsn(entity.getSsn());
-    	        return dto;
-    	    }).collect(Collectors.toList());
-    	}
+        if ("ADMIN".equals(role)) {
+            Optional<Admin> aOpt = adminRepo.findByEmail(email);
+            if (aOpt.isPresent()) {
+                entities = citizenRepo.findByCreatedByAdmin(aOpt.get());
+            }
+        } else if ("CASEWORKER".equals(role)) {
+            Optional<CaseWorker> cwOpt = caseWorkerRepo.findByEmail(email);
+            if (cwOpt.isPresent()) {
+                entities = citizenRepo.findByCreatedBy(cwOpt.get());
+            }
+        }
+        return entities.stream().map(entity -> {
+            CitizenDTO dto = new CitizenDTO();
+            dto.setFullName(entity.getFullName());
+            dto.setEmail(entity.getEmail());
+            dto.setMobileNumber(entity.getMobileNumber());
+            dto.setGender(entity.getGender());
+            dto.setDob(entity.getDob());
+            dto.setSsn(entity.getSsn());
+            return dto;
+        }).collect(Collectors.toList());
+    }
 
     @Override
     public CitizenDTO getCitizenByCaseNumber(String caseNumber) {

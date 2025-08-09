@@ -1,0 +1,64 @@
+package prajwal.in.controller;
+
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import prajwal.in.dto.CitizenRequest;
+import prajwal.in.service.CitizenService;
+
+import java.util.List;
+
+@Controller
+@RequestMapping("/application")
+public class CitizenController {
+
+    @Autowired
+    private CitizenService citizenService;
+
+    // Show create application form
+    @GetMapping("/create")
+    public String createCitizen(Model model) {
+        model.addAttribute("citizen", new CitizenRequest());
+        return "create_application";
+    }
+
+    // Save application with SSN validation and CaseWorker binding
+    @PostMapping("/save")
+    public String saveCitizen(@ModelAttribute("citizen") CitizenRequest citizenDto,
+                              HttpSession session, Model model) {
+
+        // ✅ Validate SSN starts with 123 and is 8 digits
+        if (citizenDto.getSsn() == null || !citizenDto.getSsn().matches("123\\d{5}")) {
+            model.addAttribute("error", "Application not acceptable. You are not from Oidiland.");
+            model.addAttribute("citizen", citizenDto);
+            return "create_application";
+        }
+
+        // ✅ Get logged-in caseworker ID from session
+        Long caseWorkerId = (Long) session.getAttribute("userId");
+
+        // ✅ Save via service
+        boolean saved = citizenService.saveCitizen(citizenDto, caseWorkerId);
+
+        if (!saved) {
+            model.addAttribute("error", "Failed to save application.");
+            model.addAttribute("citizen", citizenDto);
+            return "create_application";
+        }
+
+        return "redirect:/application/view";
+    }
+
+    // View only those applications created by logged-in CaseWorker
+    @GetMapping("/view")
+    public String viewCitizens(Model model, HttpSession session) {
+        Long caseWorkerId = (Long) session.getAttribute("userId");
+
+        List<CitizenRequest> list = citizenService.getCitizensByCaseWorkerId(caseWorkerId);
+        model.addAttribute("citizens", list);
+
+        return "view_applications";
+    }
+}

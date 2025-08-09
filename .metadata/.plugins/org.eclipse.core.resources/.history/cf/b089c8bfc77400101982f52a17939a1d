@@ -1,0 +1,29 @@
+package prajwal.in.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.Optional;
+
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.repo.CitizenInfoRepo;
+
+@Service
+public class CitizenInfoServiceImpl implements CitizenInfoService {
+
+    @Autowired
+    private CitizenInfoRepo infoRepo;
+
+    @Override
+    public CitizenInfo getByCaseNumber(String caseNumber) {
+        return infoRepo.findByCaseNumber(caseNumber).orElse(null);
+    }
+
+    @Override
+    public CitizenInfo saveOrUpdate(CitizenInfo info) {
+        // If record exists, replace ID so it updates instead of inserting a duplicate
+        Optional<CitizenInfo> existing = infoRepo.findByCaseNumber(info.getCaseNumber());
+        existing.ifPresent(e -> info.setId(e.getId()));
+        return infoRepo.save(info);
+    }
+}
+

@@ -2,7 +2,6 @@ package prajwal.in.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
 import java.time.LocalDate;
 
 @Entity
@@ -14,26 +13,24 @@ public class CitizenEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String fullName;
-
-    private String email;
-
-    private String mobileNumber;
-
-    private String gender;
-
-    private LocalDate dob;
     
+    private String fullName;
+    private String email;
+    private String mobileNumber;
+    private String gender;
+    private LocalDate dob;
+
     @Column(unique = true)
     private String ssn;
 
-    
-
     private String caseNumber; // 3-digit case number
 
+    // --- Ownership fields
     @ManyToOne
-    @JoinColumn(name = "created_by")
+    @JoinColumn(name = "created_by", nullable = true)
     private CaseWorker createdBy;
 
-    // Getters and Setters
+    @ManyToOne
+    @JoinColumn(name = "created_by_admin", nullable = true)
+    private Admin createdByAdmin;
 }

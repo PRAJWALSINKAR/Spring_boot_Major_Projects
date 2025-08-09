@@ -1,0 +1,71 @@
+package prajwal.in.controller;
+
+import jakarta.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.entity.*;
+import prajwal.in.repo.*;
+import prajwal.in.service.*;
+
+import java.util.List;
+import java.util.Optional;
+
+@Controller
+@RequestMapping("/application")
+public class CitizenController {
+
+    @Autowired
+    private CitizenService citizenService;
+
+    @Autowired
+    private CaseWorkerRepo caseWorkerRepo;
+
+    @Autowired
+    private AdminRepo adminRepo;
+
+    @GetMapping("/create")
+    public String showCreateForm(Model model) {
+        model.addAttribute("citizen", new CitizenEntity());
+        return "create_application";
+    }
+
+    @PostMapping("/save")
+    public String saveApplication(@ModelAttribute("citizen") CitizenEntity citizen, HttpSession session) {
+        String role = (String) session.getAttribute("role");
+        Integer userId = (Integer) session.getAttribute("userId");
+
+        if ("ADMIN".equals(role)) {
+            Optional<Admin> admin = adminRepo.findById(userId);
+            admin.ifPresent(citizen::setCreatedByAdmin);
+        } else {
+            Optional<CaseWorker> cw = caseWorkerRepo.findById(userId);
+            cw.ifPresent(citizen::setCreatedBy);
+        }
+
+        citizenService.saveCitizen(citizen);
+        return "redirect:/dashboard";
+    }
+
+    @GetMapping("/view")
+    public String viewApplications(HttpSession session, Model model) {
+        String role = (String) session.getAttribute("role");
+        Integer userId = (Integer) session.getAttribute("userId");
+
+        List<CitizenEntity> apps;
+
+        if ("ADMIN".equals(role)) {
+            Optional<Admin> admin = adminRepo.findById(userId);
+            apps = admin.map(citizenService::getCitizensByAdmin).orElse(List.of());
+        } else {
+            Optional<CaseWorker> cw = caseWorkerRepo.findById(userId);
+            apps = cw.map(citizenService::getCitizensByCaseWorker).orElse(List.of());
+        }
+
+        model.addAttribute("apps", apps);
+        return "view_applications";
+    }
+}
