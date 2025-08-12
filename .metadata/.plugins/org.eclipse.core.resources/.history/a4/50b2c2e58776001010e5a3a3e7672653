@@ -1,0 +1,21 @@
+package prajwal.in.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class EligibilityResultDTO {
+
+    private String caseNumber;
+    private String planName;
+    private String eligible;      // "Y" or "N"
+    private String denialReason;
+    private Double benefitAmount;
+    private LocalDate startDate;
+    private LocalDate endDate;
+}

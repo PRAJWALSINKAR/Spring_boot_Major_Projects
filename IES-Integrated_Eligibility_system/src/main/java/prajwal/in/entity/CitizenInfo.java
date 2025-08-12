@@ -5,14 +5,17 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "CITIZEN_INFO")
+@Table(
+    name = "citizen_info",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"case_number", "selected_plan"})
+)
 public class CitizenInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "case_number", nullable = false)
     private String caseNumber;
 
     // Income details
@@ -20,12 +23,16 @@ public class CitizenInfo {
     private Double rentIncome;
     private Double propertyIncome;
 
+    // Beneficiary account number
+    @Column(name = "account_number")
+    private String accountNumber; 
+    
     // Education details
     private String highestEducation;
     private Integer graduationYear;
     private String universityOrSchool;
 
-    // ✅ NEW: Plan name selected by user
-    @Column(name = "selected_plan")
+    // Plan name selected by user
+    @Column(name = "selected_plan", nullable = false)
     private String selectedPlan;
 }

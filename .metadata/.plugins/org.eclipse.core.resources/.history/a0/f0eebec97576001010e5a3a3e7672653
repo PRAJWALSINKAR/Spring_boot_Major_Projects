@@ -1,0 +1,84 @@
+package prajwal.in.util;
+
+import org.springframework.stereotype.Component;
+import prajwal.in.dto.EligibilityResultDTO;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.entity.Kid;
+import prajwal.in.entity.Plan;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@Component
+public class EligibilityRulesEngine {
+
+    public EligibilityResultDTO evaluatePlan(CitizenInfo citizen, List<Kid> kids, Plan plan) {
+        double totalIncome =
+                (citizen.getMonthlySalary() != null ? citizen.getMonthlySalary() : 0) +
+                (citizen.getRentIncome() != null ? citizen.getRentIncome() : 0) +
+                (citizen.getPropertyIncome() != null ? citizen.getPropertyIncome() : 0);
+
+        EligibilityResultDTO dto = new EligibilityResultDTO();
+        dto.setCaseNumber(citizen.getCaseNumber());
+        dto.setPlanName(plan.getPlanName());
+
+        // Start date = 1st of next month
+        LocalDate startDate = LocalDate.now().plusMonths(1).withDayOfMonth(1);
+        dto.setStartDate(startDate);
+        dto.setEndDate(startDate.plusMonths(12));
+
+        switch (plan.getPlanName().toUpperCase()) {
+            case "SNAP":
+                if (totalIncome > 1500) deny(dto, "Income exceeds SNAP threshold");
+                else approve(dto, 250 * (kids.size() + 1));
+                break;
+
+            case "CCAP":
+                boolean childEligible = kids.stream().anyMatch(k -> k.getKidAge() <= 14);
+                if (!childEligible) deny(dto, "No child under 14");
+                else if (totalIncome > 2500) deny(dto, "Income exceeds CCAP threshold");
+                else approve(dto, 300 * kids.size());
+                break;
+
+            case "MEDICAID":
+                if (totalIncome > 1800) deny(dto, "Income exceeds Medicaid limit");
+                else approve(dto, 0.0);
+                break;
+
+            case "MEDICARE":
+                // TODO: Need DOB in CitizenInfo to check age >= 60
+                deny(dto, "DOB not available for Medicare check");
+                break;
+
+            case "QHP":
+                if (totalIncome <= 1800) deny(dto, "Income too low - qualifies for Medicaid");
+                else if (totalIncome > 4000) deny(dto, "Income exceeds QHP limit");
+                else approve(dto, 400.0 - ((totalIncome - 1800) / 100));
+                break;
+
+            case "RIW":
+                boolean hasMinor = kids.stream().anyMatch(k -> k.getKidAge() < 18);
+                if (!hasMinor) deny(dto, "No dependent child under 18");
+                else if (totalIncome > 1800) deny(dto, "Income exceeds RIW threshold");
+                else approve(dto, 350.0);
+                break;
+
+            default:
+                deny(dto, "Unknown plan");
+        }
+
+        return dto;
+    }
+
+    private void approve(EligibilityResultDTO dto, double amount) {
+        dto.setEligible("Y");
+        dto.setBenefitAmount(amount);
+        dto.setDenialReason(null);
+    }
+
+    private void deny(EligibilityResultDTO dto, String reason) {
+        dto.setEligible("N");
+        dto.setBenefitAmount(0.0);
+        dto.setDenialReason(reason);
+    }
+}

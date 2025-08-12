@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>View Plans</title>
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+<style>
+body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+.navbar-custom { background-color: #343a40; }
+.navbar-brand img { height: 40px; }
+/* Sidebar & submenu styles */
+.sidebar {
+    width: 70px; height: 100vh; position: fixed;
+    background-color: #343a40; display: flex; flex-direction: column;
+    padding-top: 1rem; z-index: 999;
+}
+.sidebar ul { list-style: none; margin: 0; padding: 0; }
+.sidebar li { position: relative; }
+.sidebar .nav-link {
+    display: flex; justify-content: center; align-items: center;
+    height: 54px; font-size: 22px; color: white; text-decoration: none;
+}
+.sidebar .nav-link:hover { background-color: #495057; }
+.submenu {
+    display: none; position: fixed; background: #343a40;
+    min-width: 220px; box-shadow: 0 8px 24px rgba(44,62,80,0.2);
+    border-radius: 0 8px 8px 0; overflow: hidden;
+    z-index: 2000; opacity: 0; pointer-events: none;
+}
+.submenu.show { display: block; opacity: 1; pointer-events: auto; }
+.submenu a {
+    display: block; padding: 12px 18px; color: white;
+    text-decoration: none; border-bottom: 1px solid #41464b;
+}
+.submenu a:last-child { border-bottom: none; }
+.submenu a:hover { background: #495057; }
+main { margin-left: 70px; padding: 20px; }
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<div class="container-fluid">
+<a class="navbar-brand" href="#"><img th:src="@{/images/myName-Logo.png}" alt="Logo" width="40" height="40"/></a>
+<div class="ms-auto">
+    <a href="/dashboard" class="btn btn-light btn-sm">Dashboard</a>
+    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+</div>
+</div>
+</nav>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+    <ul class="nav flex-column">
+        <li><a href="/dashboard" class="nav-link" title="Dashboard"><i class="fa fa-home"></i></a></li>
+        <li class="has-popup" data-popup="appreg-popup"><a class="nav-link" title="Application Registration"><i class="fa fa-book"></i></a></li>
+        <li class="has-popup" data-popup="datacollection-popup"><a class="nav-link" title="Data Collection"><i class="fa fa-folder-open"></i></a></li>
+        <li class="has-popup" data-popup="admin-popup"><a class="nav-link" title="Admin"><i class="fa fa-user-shield"></i></a></li>
+    </ul>
+</nav>
+
+<!-- Submenus -->
+<div id="appreg-popup" class="submenu">
+    <a href="/application/create">Create Application</a>
+    <a href="/application/view">View Applications</a>
+</div>
+<div id="datacollection-popup" class="submenu">
+    <a href="/dc/income-manual">Income Details</a>
+    <a href="/dc/education-manual">Education Details</a>
+    <a href="/dc/kids-manual">Kids Details</a>
+</div>
+<div id="admin-popup" class="submenu">
+    <a href="/caseworker/register-form">Create Account</a>
+    <a href="/caseworker/view">View Accounts</a>
+    <a href="/plan/create-form">Create Plan</a>
+    <a href="/plan/view">View Plans</a>
+</div>
+
+<!-- Main -->
+<main>
+<div class="container mt-4">
+<h2 class="mb-4">View Plans</h2>
+
+<!-- Search -->
+<form method="get" th:action="@{/plan/view}" class="mb-3 d-flex">
+    <input type="text" name="name" th:value="${searchName}" class="form-control w-50 me-2" placeholder="Search by Plan Name" />
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+<!-- Table -->
+<table class="table table-bordered table-striped">
+<thead>
+<tr>
+    <th>S.NO</th>
+    <th>Plan Name</th>
+    <th>Start Date</th>
+    <th>End Date</th>
+    <th>Category</th>
+    <th>Edit</th>
+    <th>Delete</th>
+    <th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="plan, stat : ${plans}">
+    <td th:text="${stat.count}">1</td>
+    <td th:text="${plan.planName}">Plan Name</td>
+    <td><span th:if="${plan.planStartDate != null}" th:text="${#temporals.format(plan.planStartDate, 'dd-MM-yyyy')}"></span>
+        <span th:if="${plan.planStartDate == null}">N/A</span></td>
+    <td><span th:if="${plan.planEndDate != null}" th:text="${#temporals.format(plan.planEndDate, 'dd-MM-yyyy')}"></span>
+        <span th:if="${plan.planEndDate == null}">N/A</span></td>
+    <td th:text="${plan.planCategory}">Category</td>
+    <td><a th:href="@{'/plan/edit/' + ${plan.id}}" class="btn btn-primary btn-sm">✏️</a></td>
+    <td><a th:href="@{'/plan/delete/' + ${plan.id}}" class="btn btn-danger btn-sm"
+           onclick="return confirm('Are you sure you want to delete this plan?');">🗑</a></td>
+    <td>
+        <a th:if="${plan.activeSw == 'Y'}" th:href="@{'/plan/toggle-status/' + ${plan.id}}" class="btn btn-danger btn-sm">❌</a>
+        <a th:if="${plan.activeSw != 'Y'}" th:href="@{'/plan/toggle-status/' + ${plan.id}}" class="btn btn-success btn-sm">✅</a>
+    </td>
+</tr>
+</tbody>
+</table>
+</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.querySelectorAll('.has-popup').forEach(function(li){
+    li.addEventListener('mouseenter', function(){
+        document.querySelectorAll('.submenu.show').forEach(e=>e.classList.remove('show'));
+        var popup=document.getElementById(li.getAttribute('data-popup'));
+        var rect=li.getBoundingClientRect();
+        popup.style.top=rect.top+"px";
+        popup.style.left=rect.right+"px";
+        popup.classList.add('show');
+    });
+    li.addEventListener('mouseleave', function(){
+        var popup=document.getElementById(li.getAttribute('data-popup'));
+        setTimeout(function(){ if(!popup.matches(':hover')) popup.classList.remove('show'); }, 100);
+    });
+});
+document.querySelectorAll('.submenu').forEach(function(menu){
+    menu.addEventListener('mouseleave', function(){menu.classList.remove('show');});
+    menu.addEventListener('mouseenter', function(){menu.classList.add('show');});
+});
+</script>
+</body>
+</html>

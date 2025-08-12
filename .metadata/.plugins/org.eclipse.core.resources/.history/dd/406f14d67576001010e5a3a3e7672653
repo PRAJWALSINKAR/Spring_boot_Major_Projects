@@ -1,0 +1,111 @@
+package prajwal.in.util;
+
+import org.springframework.stereotype.Component;
+import prajwal.in.dto.EligibilityResultDTO;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.entity.Kid;
+import prajwal.in.entity.Plan;
+
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.List;
+
+@Component
+public class EligibilityRulesEngine {
+
+    public EligibilityResultDTO evaluatePlan(CitizenInfo citizen, List<Kid> kids, Plan plan) {
+        double totalIncome =
+                (citizen.getMonthlySalary() != null ? citizen.getMonthlySalary() : 0) +
+                (citizen.getRentIncome() != null ? citizen.getRentIncome() : 0) +
+                (citizen.getPropertyIncome() != null ? citizen.getPropertyIncome() : 0);
+
+        EligibilityResultDTO dto = new EligibilityResultDTO();
+        dto.setCaseNumber(citizen.getCaseNumber());
+        dto.setPlanName(plan.getPlanName());
+
+        // Start date = 1st of next month
+        LocalDate startDate = LocalDate.now().plusMonths(1).withDayOfMonth(1);
+        dto.setStartDate(startDate);
+        dto.setEndDate(startDate.plusMonths(12));
+
+        String planName = plan.getPlanName().trim().toLowerCase();
+
+        switch (planName) {
+            case "snap":
+                if (totalIncome > 1500)
+                    deny(dto, "Income exceeds SNAP threshold");
+                else
+                    approve(dto, 250 * (kids.size() + 1));
+                break;
+
+            case "ccap":
+                boolean hasChildUnder14 = kids.stream().anyMatch(k -> k.getKidAge() != null && k.getKidAge() <= 14);
+                if (!hasChildUnder14)
+                    deny(dto, "No child under 14");
+                else if (totalIncome > 2500)
+                    deny(dto, "Income exceeds CCAP threshold");
+                else
+                    approve(dto, 300 * kids.size());
+                break;
+
+            case "medicaid":
+                if (totalIncome > 1800)
+                    deny(dto, "Income exceeds Medicaid limit");
+                else
+                    approve(dto, 0.0); // Medicaid provides coverage, no cash amount
+                break;
+
+            case "medicare":
+                if (citizen.getDob() == null) {
+                    deny(dto, "DOB not available for Medicare check");
+                } else {
+                    int age = Period.between(citizen.getDob(), LocalDate.now()).getYears();
+                    if (age < 60) {
+                        deny(dto, "Applicant under age 60");
+                    } else {
+                        approve(dto, 0.0); // Medicare approval, no cash benefit
+                    }
+                }
+                break;
+
+            case "qhp":
+                if (totalIncome <= 1800)
+                    deny(dto, "Income too low - qualifies for Medicaid");
+                else if (totalIncome > 4000)
+                    deny(dto, "Income exceeds QHP limit");
+                else {
+                    // Calculate subsidy amount (example)
+                    double subsidy = 400.0 - ((totalIncome - 1800) / 100);
+                    if (subsidy < 0) subsidy = 0; // No negative subsidy
+                    approve(dto, subsidy);
+                }
+                break;
+
+            case "riw":
+                boolean hasDependentUnder18 = kids.stream().anyMatch(k -> k.getKidAge() != null && k.getKidAge() < 18);
+                if (!hasDependentUnder18)
+                    deny(dto, "No dependent child under 18");
+                else if (totalIncome > 1800)
+                    deny(dto, "Income exceeds RIW threshold");
+                else
+                    approve(dto, 350.0);
+                break;
+
+            default:
+                deny(dto, "Unknown plan");
+        }
+        return dto;
+    }
+
+    private void approve(EligibilityResultDTO dto, double amount) {
+        dto.setEligible("Y");
+        dto.setBenefitAmount(amount);
+        dto.setDenialReason(null);
+    }
+
+    private void deny(EligibilityResultDTO dto, String reason) {
+        dto.setEligible("N");
+        dto.setBenefitAmount(0.0);
+        dto.setDenialReason(reason);
+    }
+}

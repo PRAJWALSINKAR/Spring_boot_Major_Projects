@@ -1,0 +1,227 @@
+package prajwal.in.controller;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.dto.KidsForm;
+import prajwal.in.entity.CitizenEntity;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.entity.Kid;
+import prajwal.in.repo.CitizenInfoRepo;
+import prajwal.in.repo.CitizenRepo;
+import prajwal.in.repo.KidRepo;
+import prajwal.in.repo.PlanRepo;
+import prajwal.in.service.CitizenInfoService;
+
+@Controller
+@RequestMapping("/dc")
+public class DataCollectionController {
+
+    @Autowired private CitizenInfoService infoService;
+    @Autowired private PlanRepo planRepo;
+    @Autowired private KidRepo kidRepo;
+    @Autowired private CitizenRepo citizenRepo;
+    @Autowired private CitizenInfoRepo citizenInfoRepo;
+    
+    
+    @GetMapping("/start/{caseNumber}")
+    public String startDataCollectionPrefilled(@PathVariable String caseNumber, Model model) {
+        // Retrieve existing citizen info (any plan)
+        CitizenInfo info = infoService.getByCaseNumber(caseNumber);
+
+        if (info == null) {
+            info = new CitizenInfo();
+            info.setCaseNumber(caseNumber);
+        }
+        model.addAttribute("citizenInfo", info);
+        model.addAttribute("plans", planRepo.findByActiveSw("Y"));
+
+        List<CitizenInfo> appliedPlans = citizenInfoRepo.findAllByCaseNumber(caseNumber);
+        if (appliedPlans == null) {
+            appliedPlans = new ArrayList<>();
+        }
+        model.addAttribute("appliedPlans", appliedPlans);
+
+        // Return your plan selection template
+        return "dc_plan_selection";
+    }
+
+
+    // ---------------- INCOME MANUAL ----------------
+    @GetMapping("/income-manual")
+    public String incomeManualPage(@RequestParam(required = false) String caseNumber, Model model) {
+        CitizenInfo info = new CitizenInfo();
+        if (caseNumber != null && !caseNumber.isEmpty()) {
+            List<CitizenInfo> list = citizenInfoRepo.findAllByCaseNumber(caseNumber);
+            if (!list.isEmpty()) {
+                info = list.get(0);
+            } else {
+                info.setCaseNumber(caseNumber);
+            }
+        }
+        model.addAttribute("citizenInfo", info);
+        model.addAttribute("message", "");
+        return "dc_income_details";
+    }
+
+    @GetMapping("/income/fetch")
+    public String fetchIncomeByCaseNumber(@RequestParam String caseNumber, Model model) {
+        List<CitizenInfo> list = citizenInfoRepo.findAllByCaseNumber(caseNumber);
+        CitizenInfo info;
+        if (!list.isEmpty()) {
+            info = list.get(0);
+            model.addAttribute("message", "");
+        } else {
+            info = new CitizenInfo();
+            info.setCaseNumber(caseNumber);
+            model.addAttribute("message", "No income data found for this Case Number.");
+        }
+        model.addAttribute("citizenInfo", info);
+        return "dc_income_details";
+    }
+
+    @PostMapping("/income/save")
+    public String saveIncomeDetails(@ModelAttribute CitizenInfo info,
+                                    @RequestParam(value = "redirectToDashboard", required = false) String redirectToDashboard) {
+        if (info.getSelectedPlan() == null || info.getSelectedPlan().isBlank()) {
+            List<CitizenInfo> existingList = citizenInfoRepo.findAllByCaseNumber(info.getCaseNumber());
+            if (!existingList.isEmpty()) {
+                info.setSelectedPlan(existingList.get(0).getSelectedPlan());
+            }
+        }
+        infoService.saveOrUpdate(info);
+        return "true".equals(redirectToDashboard) ? "redirect:/dashboard"
+                : "redirect:/dc/education-manual?caseNumber=" + info.getCaseNumber();
+    }
+
+    // ---------------- EDUCATION MANUAL ----------------
+    @GetMapping("/education-manual")
+    public String educationManualPage(@RequestParam(required = false) String caseNumber, Model model) {
+        CitizenInfo info = new CitizenInfo();
+        if (caseNumber != null && !caseNumber.isEmpty()) {
+            List<CitizenInfo> list = citizenInfoRepo.findAllByCaseNumber(caseNumber);
+            if (!list.isEmpty()) {
+                info = list.get(0);
+            } else {
+                info.setCaseNumber(caseNumber);
+            }
+        }
+        model.addAttribute("citizenInfo", info);
+        model.addAttribute("message", "");
+        return "dc_education_details";
+    }
+
+    @GetMapping("/education/fetch")
+    public String fetchEducationByCaseNumber(@RequestParam String caseNumber, Model model) {
+        List<CitizenInfo> list = citizenInfoRepo.findAllByCaseNumber(caseNumber);
+        CitizenInfo info;
+        if (!list.isEmpty()) {
+            info = list.get(0);
+            model.addAttribute("message", "");
+        } else {
+            info = new CitizenInfo();
+            info.setCaseNumber(caseNumber);
+            model.addAttribute("message", "No education data found for this Case Number.");
+        }
+        model.addAttribute("citizenInfo", info);
+        return "dc_education_details";
+    }
+
+    @PostMapping("/education/save")
+    public String saveEducationDetails(@ModelAttribute CitizenInfo info,
+                                       @RequestParam(value = "redirectToDashboard", required = false) String redirectToDashboard) {
+        if (info.getSelectedPlan() == null || info.getSelectedPlan().isBlank()) {
+            List<CitizenInfo> existingList = citizenInfoRepo.findAllByCaseNumber(info.getCaseNumber());
+            if (!existingList.isEmpty()) {
+                info.setSelectedPlan(existingList.get(0).getSelectedPlan());
+            }
+        }
+        infoService.saveOrUpdate(info);
+        return "true".equals(redirectToDashboard) ? "redirect:/dashboard"
+                : "redirect:/dc/kids-manual?caseNumber=" + info.getCaseNumber();
+    }
+
+    // ---------------- KIDS MANUAL ----------------
+ // ---------------- KIDS MANUAL ----------------
+    @GetMapping("/kids-manual")
+    public String kidsManualPage(Model model, @RequestParam(required = false) String caseNumber) {
+        List<Kid> kids = new ArrayList<>();
+        if (caseNumber != null && !caseNumber.isEmpty()) {
+            kids = kidRepo.findByCaseNumber(caseNumber);
+            if (kids.isEmpty()) {
+                kids.add(new Kid());
+            }
+            model.addAttribute("caseNumber", caseNumber);
+            model.addAttribute("message", "");
+        } else {
+            model.addAttribute("caseNumber", "");
+            kids.add(new Kid());
+            model.addAttribute("message", "");
+        }
+        KidsForm kidsForm = new KidsForm();
+        kidsForm.setKids(kids);
+        model.addAttribute("kidsForm", kidsForm);
+        return "dc_kids_details";
+    }
+
+    @GetMapping("/kids/fetch")
+    public String fetchKidsByCaseNumber(@RequestParam String caseNumber, Model model) {
+        List<Kid> kids = kidRepo.findByCaseNumber(caseNumber);
+        if (kids.isEmpty()) {
+            model.addAttribute("message", "No kids data found for this Case Number.");
+            kids.add(new Kid());
+        } else {
+            model.addAttribute("message", "");
+        }
+        KidsForm kidsForm = new KidsForm();
+        kidsForm.setKids(kids);
+        model.addAttribute("caseNumber", caseNumber);
+        model.addAttribute("kidsForm", kidsForm);
+        return "dc_kids_details";
+    }
+
+    @PostMapping("/kids/save")
+    public String saveKids(@RequestParam String caseNumber,
+                           @ModelAttribute("kidsForm") KidsForm kidsForm,
+                           @RequestParam(value = "redirectToDashboard", required = false) String redirectToDashboard) {
+        kidRepo.deleteAll(kidRepo.findByCaseNumber(caseNumber));
+        List<Kid> filteredKids = new ArrayList<>();
+        for (Kid kid : kidsForm.getKids()) {
+            if (kid.getKidName() != null && !kid.getKidName().trim().isEmpty()) {
+                kid.setCaseNumber(caseNumber);
+                filteredKids.add(kid);
+            }
+        }
+        kidRepo.saveAll(filteredKids);
+        return "true".equals(redirectToDashboard) ? "redirect:/dashboard"
+                : "redirect:/dc/summary/" + caseNumber;
+    }
+
+
+    // ---------------- SUMMARY ----------------
+    @GetMapping("/summary/{caseNumber}")
+    public String showSummaryPage(@PathVariable String caseNumber, Model model) {
+        CitizenInfo citizenInfo = infoService.getByCaseNumber(caseNumber);
+        if (citizenInfo == null) {
+            return "redirect:/dc/start";
+        }
+        List<Kid> kids = kidRepo.findByCaseNumber(caseNumber);
+        Optional<CitizenEntity> citizenOpt = citizenRepo.findByCaseNumber(caseNumber);
+        model.addAttribute("citizenInfo", citizenInfo);
+        model.addAttribute("kids", kids);
+        citizenOpt.ifPresent(citizen -> model.addAttribute("citizenEntity", citizen));
+        return "dc_summary";
+    }
+    @PostMapping("/summary/confirm")
+    public String confirmSummary(@RequestParam String caseNumber) {
+        // Redirect to eligibility determination with case number auto-passed
+        return "redirect:/eligibility/check" + caseNumber;
+    }
+
+}

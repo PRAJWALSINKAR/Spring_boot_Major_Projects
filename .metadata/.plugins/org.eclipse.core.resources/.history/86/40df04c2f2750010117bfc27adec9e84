@@ -1,0 +1,99 @@
+package prajwal.in.service.impl;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import prajwal.in.dto.EligibilityResultDTO;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.entity.EligibilityResult;
+import prajwal.in.entity.Kid;
+import prajwal.in.entity.Plan;
+import prajwal.in.repo.CitizenInfoRepo;
+import prajwal.in.repo.EligibilityResultRepo;
+import prajwal.in.repo.KidRepo;
+import prajwal.in.repo.PlanRepo;
+import prajwal.in.service.EligibilityService;
+import prajwal.in.util.EligibilityRulesEngine;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+public class EligibilityServiceImpl implements EligibilityService {
+
+    private final CitizenInfoRepo citizenInfoRepo;
+    private final KidRepo kidRepo;
+    private final PlanRepo planRepo;
+    private final EligibilityResultRepo eligibilityResultRepo;
+    private final EligibilityRulesEngine rulesEngine;
+
+    @Override
+    public List<EligibilityResultDTO> determineEligibility(String caseNumber) {
+        List<EligibilityResultDTO> resultList = new ArrayList<>();
+
+        // Fetch citizen by caseNumber safely
+        Optional<CitizenInfo> citizenOpt = citizenInfoRepo.findByCaseNumber(caseNumber);
+        if (citizenOpt.isEmpty()) {
+            return resultList; // no citizen found → return empty
+        }
+        CitizenInfo citizen = citizenOpt.get();
+
+        // Fetch kids and active plans
+        List<Kid> kids = kidRepo.findByCaseNumber(caseNumber);
+        
+        // Here, to check only for that citizen's applied plan, change logic:
+        // If step-by-step flow: plan from citizen.getSelectedPlan()
+        // If manual flow: could check all active plans
+        List<Plan> plans;
+
+        if (citizen.getSelectedPlan() != null && !citizen.getSelectedPlan().isBlank()) {
+            plans = planRepo.findByPlanNameAndActiveSw(citizen.getSelectedPlan(), "Y");
+        } else {
+            plans = planRepo.findByActiveSw("Y");
+        }
+
+        for (Plan plan : plans) {
+            // Run eligibility rules
+            EligibilityResultDTO dto = rulesEngine.evaluatePlan(citizen, kids, plan);
+
+            // Save eligibility result in DB
+            EligibilityResult entity = new EligibilityResult();
+            entity.setCaseNumber(dto.getCaseNumber());
+            entity.setPlanName(dto.getPlanName());
+            entity.setEligible(dto.getEligible());
+            entity.setDenialReason(dto.getDenialReason());
+            entity.setBenefitAmount(dto.getBenefitAmount());
+            entity.setStartDate(dto.getStartDate());
+            entity.setEndDate(dto.getEndDate());
+            entity.setDeterminedAt(LocalDateTime.now());
+
+            eligibilityResultRepo.save(entity);
+
+            resultList.add(dto);
+        }
+
+        return resultList;
+    }
+
+    @Override
+    public List<EligibilityResultDTO> getEligibilityResults(String caseNumber) {
+        List<EligibilityResult> records = eligibilityResultRepo.findByCaseNumber(caseNumber);
+        List<EligibilityResultDTO> dtos = new ArrayList<>();
+
+        for (EligibilityResult rec : records) {
+            dtos.add(new EligibilityResultDTO(
+                    rec.getCaseNumber(),
+                    rec.getPlanName(),
+                    rec.getEligible(),
+                    rec.getDenialReason(),
+                    rec.getBenefitAmount(),
+                    rec.getStartDate(),
+                    rec.getEndDate()
+            ));
+        }
+
+        return dtos;
+    }
+}

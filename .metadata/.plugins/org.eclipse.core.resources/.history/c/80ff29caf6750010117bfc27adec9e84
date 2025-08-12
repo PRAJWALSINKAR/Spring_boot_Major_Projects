@@ -1,0 +1,56 @@
+package prajwal.in.controller;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import prajwal.in.dto.EligibilityResultDTO;
+import prajwal.in.service.EligibilityService;
+import prajwal.in.model.CaseNumberForm;
+
+import java.util.List;
+
+@Controller
+@RequiredArgsConstructor
+@RequestMapping("/eligibility")
+public class EligibilityController {
+
+    private final EligibilityService eligibilityService;
+
+    // Step-by-step process: auto-passed case number
+    @GetMapping("/determine/{caseNumber}")
+    public String determineEligibility(@PathVariable String caseNumber, Model model) {
+        List<EligibilityResultDTO> results = eligibilityService.determineEligibility(caseNumber);
+        model.addAttribute("results", results);
+        return "eligibility-result"; // Thymeleaf template name
+    }
+
+    // Dashboard/manual flow: enter case number
+    @GetMapping("/check")
+    public String showCheckForm(Model model) {
+        model.addAttribute("caseForm", new CaseNumberForm());
+        return "eligibility-check-form"; // Thymeleaf template for case number entry
+    }
+
+    @PostMapping("/check")
+    public String checkEligibility(@ModelAttribute CaseNumberForm caseForm, Model model) {
+        List<EligibilityResultDTO> results = eligibilityService.determineEligibility(caseForm.getCaseNumber());
+        model.addAttribute("results", results);
+        return "eligibility-result"; // Same result template
+    }
+
+    // View previously determined eligibility results (not new calculation)
+    @GetMapping("/view/{caseNumber}")
+    public String viewEligibility(@PathVariable String caseNumber, Model model) {
+        List<EligibilityResultDTO> results = eligibilityService.getEligibilityResults(caseNumber);
+        model.addAttribute("results", results);
+        return "eligibility-result";
+    }
+    @GetMapping("/view/all")
+    public String viewAllEligibility(Model model) {
+        List<EligibilityResultDTO> results = eligibilityService.getAllEligibilityResults();
+        model.addAttribute("results", results);
+        return "eligibility-result"; // same table template
+    }
+
+}

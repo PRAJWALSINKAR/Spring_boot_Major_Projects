@@ -1,0 +1,80 @@
+package prajwal.in.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.repo.CitizenInfoRepo;
+import prajwal.in.repo.PlanRepo;
+
+import java.util.List;
+
+@Controller
+@RequestMapping("/citizen-plan")
+public class CitizenPlanController {
+
+    @Autowired
+    private CitizenInfoRepo citizenInfoRepo;
+
+    @Autowired
+    private PlanRepo planRepo;
+
+    /**
+     * Show plan selection form for a specific citizen
+     */
+    @GetMapping("/select/{caseNumber}")
+    public String showPlanSelection(@PathVariable String caseNumber, Model model) {
+        model.addAttribute("caseNumber", caseNumber);
+        model.addAttribute("plans", planRepo.findAll());
+        return "select-plan"; // make select-plan.html
+    }
+
+    /**
+     * Save citizen's plan application (create new row for different plans)
+     */
+    @PostMapping("/apply")
+    public String applyForPlan(@RequestParam String caseNumber,
+                               @RequestParam String planName,
+                               RedirectAttributes redirectAttributes) {
+
+        // ✅ Check if same citizen has already applied for this plan
+        List<CitizenInfo> existingPlans = citizenInfoRepo.findByCaseNumber(caseNumber);
+        boolean alreadyApplied = existingPlans.stream()
+                .anyMatch(info -> planName.equalsIgnoreCase(info.getSelectedPlan()));
+
+        if (alreadyApplied) {
+            redirectAttributes.addFlashAttribute("errMsg",
+                    "You have already applied for the plan: " + planName);
+            return "redirect:/citizen-plan/select/" + caseNumber;
+        }
+
+        // ✅ If we find at least one record for this citizen, copy details from latest
+        if (!existingPlans.isEmpty()) {
+            CitizenInfo latest = existingPlans.get(existingPlans.size() - 1);
+
+            CitizenInfo copy = new CitizenInfo();
+            copy.setCaseNumber(latest.getCaseNumber());
+            copy.setMonthlySalary(latest.getMonthlySalary());
+            copy.setRentIncome(latest.getRentIncome());
+            copy.setPropertyIncome(latest.getPropertyIncome());
+            copy.setHighestEducation(latest.getHighestEducation());
+            copy.setGraduationYear(latest.getGraduationYear());
+            copy.setUniversityOrSchool(latest.getUniversityOrSchool());
+            copy.setSelectedPlan(planName);
+
+            citizenInfoRepo.save(copy);
+        } else {
+            // ✅ If no record yet → create fresh
+            CitizenInfo newInfo = new CitizenInfo();
+            newInfo.setCaseNumber(caseNumber);
+            newInfo.setSelectedPlan(planName);
+            citizenInfoRepo.save(newInfo);
+        }
+
+        redirectAttributes.addFlashAttribute("succMsg",
+                "Plan applied successfully: " + planName);
+        return "redirect:/application/view";
+    }
+}

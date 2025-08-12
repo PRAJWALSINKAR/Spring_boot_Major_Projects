@@ -4,26 +4,33 @@
 <meta charset="UTF-8">
 <title>Income Details</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-body {
-    background-color: #f8f9fa;
-    font-family: 'Segoe UI', sans-serif;
-}
+body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
 .navbar { background-color: #343a40 !important; }
 .navbar-brand img { height: 40px; width: 40px; }
 .form-container {
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    padding: 32px;
-    margin: 40px auto;
-    max-width: 800px;
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 32px; margin: 40px auto; max-width: 800px;
 }
+.sidebar { width: 70px; height: 100vh; position: fixed;
+    background-color: #343a40; display: flex; flex-direction: column;
+    padding-top: 1rem; z-index: 999; }
+.sidebar ul { margin: 0; padding: 0; list-style: none; }
+.sidebar li { position: relative; }
+.sidebar .nav-link { display: flex; justify-content: center; align-items: center; height: 54px; color: white; font-size: 22px; text-decoration: none; }
+.sidebar .nav-link:hover { background-color: #495057; }
+.submenu { display: none; position: fixed; background: #343a40; min-width: 220px; box-shadow: 0 8px 24px rgba(44,62,80,0.2); border-radius: 0 8px 8px 0; overflow: hidden; z-index: 2000; opacity: 0; pointer-events: none;}
+.submenu.show { display: block; opacity: 1; pointer-events: auto;}
+.submenu a { display: block; color: white; padding: 12px 18px; text-decoration: none; border-bottom: 1px solid #41464b; }
+.submenu a:last-child { border-bottom: none; }
+.submenu a:hover { background-color: #495057; }
+main { margin-left: 70px; padding: 20px; }
 </style>
 </head>
 <body>
 
-<!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark px-3 py-2">
     <div class="d-flex align-items-center">
         <button onclick="history.back()" class="btn btn-outline-light me-3" title="Go Back">&#8592;</button>
@@ -37,48 +44,110 @@ body {
     </div>
 </nav>
 
-<!-- Form -->
+<!-- SIDEBAR -->
+<nav class="sidebar">
+    <ul class="nav flex-column">
+        <li><a href="/dashboard" class="nav-link" title="Dashboard"><i class="fa fa-home"></i></a></li>
+        <li class="has-popup" data-popup="appreg-popup"><a class="nav-link" title="Application Registration"><i class="fa fa-book"></i></a></li>
+        <li class="has-popup" data-popup="datacollection-popup"><a class="nav-link" title="Data Collection"><i class="fa fa-folder-open"></i></a></li>
+        <li th:if="${session.role == 'ADMIN'}" class="has-popup" data-popup="admin-popup">
+            <a class="nav-link" title="Admin"><i class="fa fa-user-shield"></i></a>
+        </li>
+    </ul>
+</nav>
+<div id="appreg-popup" class="submenu">
+    <a href="/application/create">Create Application</a>
+    <a href="/application/view">View Applications</a>
+</div>
+<div id="datacollection-popup" class="submenu">
+    <a href="/dc/income-manual"><i class="fa fa-money-bill-wave me-2"></i>Income Details</a>
+    <a href="/dc/education-manual"><i class="fa fa-graduation-cap me-2"></i>Education Details</a>
+    <a href="/dc/kids-manual"><i class="fa fa-child me-2"></i>Kids Details</a>
+</div>
+<div id="admin-popup" class="submenu">
+    <a href="/caseworker/register-form">Create Account</a>
+    <a href="/caseworker/view">View Accounts</a>
+    <a href="/plan/create-form">Create Plan</a>
+    <a href="/plan/view">View Plans</a>
+</div>
+
+<main>
 <div class="form-container">
 <h4 class="mb-4">Step 2: Income Details</h4>
-
-<!-- GET DETAILS Form -->
+<!-- Manual fetch: works exactly like Kids -->
 <form th:action="@{/dc/income/fetch}" method="get" class="mb-3 d-flex">
     <input type="text" name="caseNumber" th:value="${citizenInfo.caseNumber}" class="form-control me-2" placeholder="Enter Case Number" required>
     <button type="submit" class="btn btn-info">Get Details</button>
 </form>
 <p class="text-danger" th:text="${message}"></p>
 
-<!-- Main Save Form -->
-<form th:action="@{/dc/income/save}" method="post" th:object="${citizenInfo}">
+<form th:action="@{/dc/income/save}" method="post" th:object="${citizenInfo}" onsubmit="return validateAccountNumber();">
+    <input type="hidden" th:field="*{selectedPlan}"/>    
     <div class="mb-3">
         <label class="form-label">Case Number</label>
         <input type="text" th:field="*{caseNumber}" class="form-control" readonly>
     </div>
-
     <div class="mb-3">
         <label class="form-label">Monthly Salary</label>
         <input type="number" th:field="*{monthlySalary}" class="form-control" step="0.01" min="0" required>
     </div>
-
     <div class="mb-3">
         <label class="form-label">Rent Income</label>
         <input type="number" th:field="*{rentIncome}" class="form-control" step="0.01" min="0">
     </div>
-
     <div class="mb-3">
         <label class="form-label">Property Income</label>
         <input type="number" th:field="*{propertyIncome}" class="form-control" step="0.01" min="0">
     </div>
-
+    <!-- BEGIN: ACCOUNT NUMBER FIELD -->
+    <div class="mb-3">
+        <label class="form-label">Beneficiary Account Number</label>
+        <input type="text" th:field="*{accountNumber}" class="form-control" 
+               maxlength="10" minlength="10" required pattern="\d{10}" 
+               title="Account number must be exactly 10 digits"
+               id="accNumField">
+        <div class="form-text text-danger" id="accNumError" style="display:none;">Account number must be exactly 10 digits.</div>
+    </div>
+    <!-- END: ACCOUNT NUMBER FIELD -->
     <div class="d-flex justify-content-between">
-        <!-- Dashboard redirect -->
         <button type="submit" name="redirectToDashboard" value="true" class="btn btn-secondary">Dashboard</button>
-        <!-- Next step -->
         <button type="submit" class="btn btn-primary">Next →</button>
     </div>
 </form>
 </div>
-
+</main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.querySelectorAll('.has-popup').forEach(function(li){
+    li.addEventListener('mouseenter', function(){
+        document.querySelectorAll('.submenu.show').forEach(x => x.classList.remove('show'));
+        var rect = li.getBoundingClientRect();
+        var popup = document.getElementById(li.getAttribute('data-popup'));
+        popup.style.top = rect.top + "px";
+        popup.style.left = rect.right + "px";
+        popup.classList.add('show');
+    });
+    li.addEventListener('mouseleave', function(){
+        var popup = document.getElementById(li.getAttribute('data-popup'));
+        setTimeout(function(){ if (!popup.matches(':hover')) { popup.classList.remove('show'); } }, 100);
+    });
+});
+document.querySelectorAll('.submenu').forEach(function(menu){
+    menu.addEventListener('mouseleave', function(){ menu.classList.remove('show'); });
+    menu.addEventListener('mouseenter', function(){ menu.classList.add('show'); });
+});
+// Account number extra JS validation on submit
+function validateAccountNumber() {
+    var accField = document.getElementById('accNumField');
+    var errorDiv = document.getElementById('accNumError');
+    if (!/^\d{10}$/.test(accField.value.trim())) {
+        errorDiv.style.display = "block";
+        accField.focus();
+        return false;
+    }
+    errorDiv.style.display = "none";
+    return true;
+}
+</script>
 </body>
 </html>

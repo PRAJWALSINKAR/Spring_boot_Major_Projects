@@ -1,0 +1,34 @@
+package prajwal.in.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+@Entity
+@Data
+@Table(
+    name = "citizen_info",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"case_number", "selected_plan"})
+)
+public class CitizenInfo {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "case_number", nullable = false)
+    private String caseNumber;
+
+    // Income details
+    private Double monthlySalary;
+    private Double rentIncome;
+    private Double propertyIncome;
+
+    // Education details
+    private String highestEducation;
+    private Integer graduationYear;
+    private String universityOrSchool;
+
+    // Plan name selected by user
+    @Column(name = "selected_plan", nullable = false)
+    private String selectedPlan;
+}

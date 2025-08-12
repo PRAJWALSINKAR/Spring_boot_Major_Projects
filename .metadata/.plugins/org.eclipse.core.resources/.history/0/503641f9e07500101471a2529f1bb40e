@@ -1,0 +1,89 @@
+package prajwal.in.controller;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import prajwal.in.dto.KidsForm;
+import prajwal.in.entity.CitizenEntity;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.entity.Kid;
+import prajwal.in.repo.CitizenInfoRepo;
+import prajwal.in.repo.CitizenRepo;
+import prajwal.in.repo.KidRepo;
+import prajwal.in.repo.PlanRepo;
+import prajwal.in.service.CitizenInfoService;
+
+@Controller
+@RequestMapping("/dc")
+public class DataCollectionController {
+
+    @Autowired private CitizenInfoService infoService;
+    @Autowired private PlanRepo planRepo;
+    @Autowired private KidRepo kidRepo;
+    @Autowired private CitizenRepo citizenRepo;
+    @Autowired private CitizenInfoRepo citizenInfoRepo;
+
+    // ---------------- START ----------------
+    @GetMapping("/start/{caseNumber}")
+    public String startDataCollectionPrefilled(@PathVariable String caseNumber, Model model) {
+        CitizenInfo info = infoService.getByCaseNumber(caseNumber);
+        if (info == null) {
+            info = new CitizenInfo();
+            info.setCaseNumber(caseNumber);
+        }
+        model.addAttribute("citizenInfo", info);
+        model.addAttribute("plans", planRepo.findByActiveSw("Y"));
+        List<CitizenInfo> appliedPlans = citizenInfoRepo.findAllByCaseNumber(caseNumber);
+        if (appliedPlans == null) appliedPlans = new ArrayList<>();
+        model.addAttribute("appliedPlans", appliedPlans);
+        return "dc_plan_selection";
+    }
+
+    @GetMapping("/start")
+    public String startDataCollectionManual(Model model) {
+        model.addAttribute("citizenInfo", new CitizenInfo());
+        model.addAttribute("plans", planRepo.findByActiveSw("Y"));
+        model.addAttribute("appliedPlans", new ArrayList<>());
+        return "dc_plan_selection";
+    }
+
+    // ---------------- INCOME SAVE ----------------
+    @PostMapping("/income/save")
+    public String saveIncomeDetails(@ModelAttribute CitizenInfo info,
+                                    @RequestParam(value = "redirectToDashboard", required = false) String redirectToDashboard) {
+        // Always preserve selectedPlan to update same row
+        if (info.getSelectedPlan() == null || info.getSelectedPlan().isBlank()) {
+            List<CitizenInfo> existingList = citizenInfoRepo.findAllByCaseNumber(info.getCaseNumber());
+            if (!existingList.isEmpty()) {
+                info.setSelectedPlan(existingList.get(0).getSelectedPlan());
+            }
+        }
+        infoService.saveOrUpdate(info);
+        return "true".equals(redirectToDashboard) ? "redirect:/dashboard" :
+                "redirect:/dc/education/" + info.getCaseNumber();
+    }
+
+    // ---------------- EDUCATION SAVE ----------------
+    @PostMapping("/education/save")
+    public String saveEducationDetails(@ModelAttribute CitizenInfo info,
+                                       @RequestParam(value = "redirectToDashboard", required = false) String redirectToDashboard) {
+        if (info.getSelectedPlan() == null || info.getSelectedPlan().isBlank()) {
+            List<CitizenInfo> existingList = citizenInfoRepo.findAllByCaseNumber(info.getCaseNumber());
+            if (!existingList.isEmpty()) {
+                info.setSelectedPlan(existingList.get(0).getSelectedPlan());
+            }
+        }
+        infoService.saveOrUpdate(info);
+        return "true".equals(redirectToDashboard) ? "redirect:/dashboard" :
+                "redirect:/dc/kids/" + info.getCaseNumber();
+    }
+
+    // ---------------- Kids + Summary remain unchanged ----------------
+    // Keep all your existing methods for kids & summary here...
+}

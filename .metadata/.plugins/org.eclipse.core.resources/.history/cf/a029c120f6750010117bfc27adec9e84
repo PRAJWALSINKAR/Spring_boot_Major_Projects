@@ -1,0 +1,40 @@
+<!-- src/main/resources/templates/eligibility-result.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Eligibility Results</title>
+<!-- (Include your CSS and JS links and styles here) -->
+</head>
+<body>
+<!-- Your header, sidebar here -->
+
+<main>
+    <h4>Eligibility Results</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Plan Name</th>
+                <th>Eligible</th>
+                <th>Denial Reason</th>
+                <th>Benefit Amount</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="res : ${results}">
+                <td th:text="${res.planName}"></td>
+                <td th:text="${res.eligible}"></td>
+                <td th:text="${res.denialReason}"></td>
+                <td th:text="${res.benefitAmount}"></td>
+                <td th:text="${res.startDate}"></td>
+                <td th:text="${res.endDate}"></td>
+            </tr>
+        </tbody>
+    </table>
+</main>
+
+<!-- Your footer and scripts here -->
+</body>
+</html>

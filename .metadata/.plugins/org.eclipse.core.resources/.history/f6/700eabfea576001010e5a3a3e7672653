@@ -1,0 +1,54 @@
+package prajwal.in.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import prajwal.in.entity.BenefitTransaction;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.repo.BenefitTransactionRepo;
+import prajwal.in.repo.CitizenInfoRepo;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+public class BenefitTransactionServiceImpl implements BenefitTransactionService {
+
+    @Autowired
+    private BenefitTransactionRepo transactionRepo;
+
+    @Autowired
+    private CitizenInfoRepo citizenInfoRepo;
+
+    @Override
+    public List<BenefitTransaction> getTransactionsByCaseNumber(String caseNumber) {
+        return transactionRepo.findByCaseNumber(caseNumber);
+    }
+
+    @Override
+    public void sendMoneyToAllApproved() {
+        // Get all citizens (simulate: filter by approved plan)
+        List<CitizenInfo> allCitizens = citizenInfoRepo.findAll();
+
+        allCitizens.stream()
+                .filter(ci -> "Approved".equalsIgnoreCase(ci.getSelectedPlan())) // Adjust to real approved check
+                .forEach(ci -> {
+                    BenefitTransaction tx = new BenefitTransaction();
+                    tx.setCaseNumber(ci.getCaseNumber());
+                    tx.setPlanName(ci.getSelectedPlan());
+                    tx.setPlanStatus("Approved");
+                    tx.setBenefitAmount(calculateBenefit(ci)); // sum plans if needed
+                    tx.setAccountNumber(ci.getAccountNumber());
+                    tx.setTransactionDate(LocalDate.now());
+                    tx.setTransactionStatus("Success");
+                    tx.setEdgTraceId(UUID.randomUUID().toString());
+                    tx.setTotalAmountReceived(tx.getBenefitAmount()); // adjust logic for cumulative
+                    transactionRepo.save(tx);
+                });
+    }
+
+    private Double calculateBenefit(CitizenInfo ci) {
+        // For now fixed, later sum from plan eligibility
+        return 1000.0; 
+    }
+}

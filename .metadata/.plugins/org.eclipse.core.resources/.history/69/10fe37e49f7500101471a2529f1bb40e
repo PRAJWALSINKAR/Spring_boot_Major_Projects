@@ -1,0 +1,47 @@
+package prajwal.in.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.repo.CitizenInfoRepo;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class CitizenInfoServiceImpl implements CitizenInfoService {
+
+    @Autowired
+    private CitizenInfoRepo infoRepo;
+
+    @Override
+    public CitizenInfo getByCaseNumber(String caseNumber) {
+        // Get the first record for the caseNumber
+        List<CitizenInfo> list = infoRepo.findAllByCaseNumber(caseNumber);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    @Override
+    public CitizenInfo saveOrUpdate(CitizenInfo info) {
+        // Prevent duplicate for same caseNumber & plan
+        Optional<CitizenInfo> samePlan =
+                infoRepo.findByCaseNumberAndSelectedPlan(info.getCaseNumber(), info.getSelectedPlan());
+        if (samePlan.isPresent()) {
+            return samePlan.get();
+        }
+
+        // Copy from existing if any, else save as is
+        List<CitizenInfo> existingList = infoRepo.findAllByCaseNumber(info.getCaseNumber());
+        if (!existingList.isEmpty()) {
+            CitizenInfo source = existingList.get(0);
+            info.setMonthlySalary(source.getMonthlySalary());
+            info.setRentIncome(source.getRentIncome());
+            info.setPropertyIncome(source.getPropertyIncome());
+            info.setHighestEducation(source.getHighestEducation());
+            info.setGraduationYear(source.getGraduationYear());
+            info.setUniversityOrSchool(source.getUniversityOrSchool());
+        }
+
+        return infoRepo.save(info);
+    }
+}

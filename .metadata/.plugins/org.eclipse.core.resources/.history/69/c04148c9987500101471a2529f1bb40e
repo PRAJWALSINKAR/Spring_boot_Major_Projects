@@ -1,0 +1,15 @@
+package prajwal.in.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+import java.util.Optional;
+import prajwal.in.entity.CitizenInfo;
+
+public interface CitizenInfoRepo extends JpaRepository<CitizenInfo, Long> {
+
+    // Return all records for a caseNumber, newest first
+    List<CitizenInfo> findByCaseNumberOrderByIdDesc(String caseNumber);
+
+    // Check whether the citizen already applied for this exact plan
+    Optional<CitizenInfo> findByCaseNumberAndSelectedPlan(String caseNumber, String selectedPlan);
+}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Select Plan</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f9f9f9; }
+        .container { width: 500px; margin: 50px auto; background: white; padding: 20px; border-radius: 8px; }
+        h2 { text-align: center; }
+        .message { padding: 10px; margin-bottom: 15px; border-radius: 5px; }
+        .error { background: #ffdddd; color: #a94442; }
+        .success { background: #ddffdd; color: #3c763d; }
+        select, button { width: 100%; padding: 8px; margin: 10px 0; }
+        button { background: #007BFF; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Select a Plan</h2>
+
+    <!-- Show error or success messages -->
+    <div th:if="${errMsg}" class="message error" th:text="${errMsg}"></div>
+    <div th:if="${succMsg}" class="message success" th:text="${succMsg}"></div>
+
+    <form th:action="@{/citizen-plan/apply}" method="post">
+        <!-- Keep the caseNumber -->
+        <input type="hidden" name="caseNumber" th:value="${caseNumber}">
+
+        <label for="planName">Choose Plan:</label>
+        <select id="planName" name="planName" required>
+            <option value="">-- Select --</option>
+            <option th:each="plan : ${plans}"
+                    th:value="${plan.planName}"
+                    th:text="${plan.planName}">
+            </option>
+        </select>
+
+        <button type="submit">Apply</button>
+    </form>
+</div>
+</body>
+</html>

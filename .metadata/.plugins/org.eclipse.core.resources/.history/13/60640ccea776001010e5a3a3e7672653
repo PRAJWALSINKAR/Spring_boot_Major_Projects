@@ -1,0 +1,71 @@
+package prajwal.in.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import prajwal.in.entity.BenefitTransaction;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.repo.BenefitTransactionRepo;
+import prajwal.in.repo.CitizenInfoRepo;
+import prajwal.in.dto.BenefitTransactionDTO;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+public class BenefitTransactionServiceImpl implements BenefitTransactionService {
+
+    @Autowired
+    private BenefitTransactionRepo transactionRepo;
+
+    @Autowired
+    private CitizenInfoRepo citizenInfoRepo;
+
+    @Override
+    public List<BenefitTransactionDTO> getTransactionsByCaseNumber(String caseNumber) {
+        List<BenefitTransaction> transactions = transactionRepo.findByCaseNumber(caseNumber);
+        return transactions.stream().map(tx -> new BenefitTransactionDTO(
+                tx.getId(),
+                tx.getEdgTraceId(),
+                tx.getCaseNumber(),
+                tx.getPlanName(),
+                tx.getPlanStatus(),
+                tx.getBenefitAmount(),
+                tx.getAccountNumber(),
+                tx.getStartDate(),
+                tx.getEndDate(),
+                tx.getTransactionDate(),
+                tx.getTransactionStatus(),
+                tx.getTotalAmountReceived()
+        )).collect(Collectors.toList());
+    }
+
+    @Override
+    public void sendMoneyToAllApproved() {
+        // The actual approved logic should pull eligibility data; Here, use CitizenInfo as dummy
+        List<CitizenInfo> allCitizens = citizenInfoRepo.findAll();
+
+        for (CitizenInfo ci : allCitizens) {
+            // You should filter using eligibility results in your real code!
+            if ("Approved".equalsIgnoreCase(ci.getSelectedPlan())) { // make this real check!
+                BenefitTransaction tx = new BenefitTransaction();
+                tx.setCaseNumber(ci.getCaseNumber());
+                tx.setPlanName(ci.getSelectedPlan());
+                tx.setPlanStatus("Approved");
+                tx.setBenefitAmount(calculateBenefit(ci));
+                tx.setAccountNumber(ci.getAccountNumber());
+                tx.setTransactionDate(LocalDate.now());
+                tx.setTransactionStatus("Success");
+                tx.setEdgTraceId(UUID.randomUUID().toString());
+                tx.setTotalAmountReceived(tx.getBenefitAmount());
+                transactionRepo.save(tx);
+            }
+        }
+    }
+
+    private Double calculateBenefit(CitizenInfo ci) {
+        // Replace with real calculation logic from eligibility
+        return 1000.0;
+    }
+}

@@ -1,0 +1,18 @@
+package prajwal.in.service;
+
+import java.util.List;
+import prajwal.in.dto.EligibilityResultDTO;
+
+public interface EligibilityService {
+
+    /**
+     * Determines eligibility for all plans of a given case number,
+     * inserts or updates results in DB.
+     */
+    List<EligibilityResultDTO> determineEligibility(String caseNumber);
+
+    /**
+     * Retrieve previously determined results for a given case number.
+     */
+    List<EligibilityResultDTO> getEligibilityResults(String caseNumber);
+}

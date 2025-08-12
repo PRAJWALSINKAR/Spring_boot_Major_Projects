@@ -1,0 +1,88 @@
+package prajwal.in.service.impl;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import prajwal.in.dto.EligibilityResultDTO;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.entity.EligibilityResult;
+import prajwal.in.entity.Kid;
+import prajwal.in.entity.Plan;
+import prajwal.in.repo.CitizenInfoRepo;
+import prajwal.in.repo.EligibilityResultRepo;
+import prajwal.in.repo.KidRepo;
+import prajwal.in.repo.PlanRepo;
+import prajwal.in.service.EligibilityService;
+import prajwal.in.util.EligibilityRulesEngine;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class EligibilityServiceImpl implements EligibilityService {
+
+    private final CitizenInfoRepo citizenInfoRepo;
+    private final KidRepo kidRepo;
+    private final PlanRepo planRepo;
+    private final EligibilityResultRepo eligibilityResultRepo;
+    private final EligibilityRulesEngine rulesEngine;
+
+    @Override
+    public List<EligibilityResultDTO> determineEligibility(String caseNumber) {
+        List<EligibilityResultDTO> resultList = new ArrayList<>();
+
+        // Using existing method findAllByCaseNumber (may return multiple records)
+        List<CitizenInfo> citizenList = citizenInfoRepo.findAllByCaseNumber(caseNumber);
+        if (citizenList == null || citizenList.isEmpty()) {
+            return resultList; // No record found
+        }
+
+        // Assuming only one main citizen record per case
+        CitizenInfo citizen = citizenList.get(0);
+
+        List<Kid> kids = kidRepo.findByCaseNumber(caseNumber);
+        List<Plan> plans = planRepo.findByActiveSw("Y"); // only active plans
+
+        for (Plan plan : plans) {
+            // Evaluate eligibility
+            EligibilityResultDTO dto = rulesEngine.evaluatePlan(citizen, kids, plan);
+
+            // Save result to DB
+            EligibilityResult entity = new EligibilityResult();
+            entity.setCaseNumber(dto.getCaseNumber());
+            entity.setPlanName(dto.getPlanName());
+            entity.setEligible(dto.getEligible());
+            entity.setDenialReason(dto.getDenialReason());
+            entity.setBenefitAmount(dto.getBenefitAmount());
+            entity.setStartDate(dto.getStartDate());
+            entity.setEndDate(dto.getEndDate());
+            entity.setDeterminedAt(LocalDateTime.now());
+
+            eligibilityResultRepo.save(entity);
+
+            resultList.add(dto);
+        }
+
+        return resultList;
+    }
+
+    @Override
+    public List<EligibilityResultDTO> getEligibilityResults(String caseNumber) {
+        List<EligibilityResult> records = eligibilityResultRepo.findByCaseNumber(caseNumber);
+        List<EligibilityResultDTO> dtos = new ArrayList<>();
+
+        for (EligibilityResult rec : records) {
+            dtos.add(new EligibilityResultDTO(
+                    rec.getCaseNumber(),
+                    rec.getPlanName(),
+                    rec.getEligible(),
+                    rec.getDenialReason(),
+                    rec.getBenefitAmount(),
+                    rec.getStartDate(),
+                    rec.getEndDate()
+            ));
+        }
+        return dtos;
+    }
+}

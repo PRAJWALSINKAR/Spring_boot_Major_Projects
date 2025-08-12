@@ -1,0 +1,55 @@
+package prajwal.in.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import prajwal.in.entity.CitizenInfo;
+import prajwal.in.repo.CitizenInfoRepo;
+
+import java.util.Optional;
+
+@Service
+public class CitizenInfoServiceImpl implements CitizenInfoService {
+
+    @Autowired
+    private CitizenInfoRepo infoRepo;
+
+    @Override
+    public CitizenInfo getByCaseNumber(String caseNumber) {
+        return infoRepo.findByCaseNumber(caseNumber).orElse(null);
+    }
+
+    @Override
+    public CitizenInfo saveOrUpdate(CitizenInfo info) {
+        // Check if this exact plan already exists for this case
+        Optional<CitizenInfo> samePlanOpt =
+                infoRepo.findByCaseNumberAndSelectedPlan(info.getCaseNumber(), info.getSelectedPlan());
+
+        if (samePlanOpt.isPresent()) {
+            // Plan already applied → just return existing (no duplicate)
+            return samePlanOpt.get();
+        }
+
+        // Otherwise → Check if citizen exists with different plan
+        Optional<CitizenInfo> existingOpt = infoRepo.findByCaseNumber(info.getCaseNumber());
+
+        if (existingOpt.isPresent()) {
+            CitizenInfo existing = existingOpt.get();
+
+            // Create a new copy with same details but different plan
+            CitizenInfo newCopy = new CitizenInfo();
+            newCopy.setCaseNumber(existing.getCaseNumber());
+            newCopy.setMonthlySalary(existing.getMonthlySalary());
+            newCopy.setRentIncome(existing.getRentIncome());
+            newCopy.setPropertyIncome(existing.getPropertyIncome());
+            newCopy.setHighestEducation(existing.getHighestEducation());
+            newCopy.setGraduationYear(existing.getGraduationYear());
+            newCopy.setUniversityOrSchool(existing.getUniversityOrSchool());
+            newCopy.setSelectedPlan(info.getSelectedPlan()); // new plan
+
+            return infoRepo.save(newCopy);
+        }
+
+        // No citizen record yet → save first time
+        return infoRepo.save(info);
+    }
+}

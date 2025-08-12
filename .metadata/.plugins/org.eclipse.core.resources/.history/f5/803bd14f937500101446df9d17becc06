@@ -1,0 +1,82 @@
+package prajwal.in.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "citizen_info")
+public class CitizenInfo {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String caseNumber;
+
+    private String planName; // ✅ Needed to track which plan was applied for
+
+    private String fullName;
+    private String dob;
+    private String gender;
+    private String ssn;
+    private String address;
+
+    // Constructors
+    public CitizenInfo() {}
+
+    // Getters & Setters
+    public Long getId() {
+        return id;
+    }
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getCaseNumber() {
+        return caseNumber;
+    }
+    public void setCaseNumber(String caseNumber) {
+        this.caseNumber = caseNumber;
+    }
+
+    public String getPlanName() {
+        return planName;
+    }
+    public void setPlanName(String planName) {
+        this.planName = planName;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getDob() {
+        return dob;
+    }
+    public void setDob(String dob) {
+        this.dob = dob;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public String getSsn() {
+        return ssn;
+    }
+    public void setSsn(String ssn) {
+        this.ssn = ssn;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+    public void setAddress(String address) {
+        this.address = address;
+    }
+}

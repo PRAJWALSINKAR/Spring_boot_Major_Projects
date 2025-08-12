@@ -1,0 +1,13 @@
+package prajwal.in.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
+import prajwal.in.entity.CitizenInfo;
+
+public interface CitizenInfoRepo extends JpaRepository<CitizenInfo, Long> {
+
+    Optional<CitizenInfo> findByCaseNumber(String caseNumber);
+
+    // ✅ New method to check if citizen already applied for the same plan
+    Optional<CitizenInfo> findByCaseNumberAndPlanName(String caseNumber, String planName);
+}

@@ -1,0 +1,42 @@
+package prajwal.in.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+import java.time.LocalDate;
+
+@Entity
+@Data
+@Table(name = "ELIGIBILITY_RESULT")
+public class EligibilityResult {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // Case number of applicant
+    @Column(nullable = false)
+    private String caseNumber;
+
+    // Plan name for which eligibility is determined
+    @Column(nullable = false)
+    private String planName;
+
+    // Whether user is eligible
+    @Column(nullable = false)
+    private String eligible; // "Y" or "N"
+
+    // Denial reason (if not eligible)
+    private String denialReason;
+
+    // Benefit amount (0 if not cash benefit)
+    private Double benefitAmount;
+
+    // Eligibility period
+    private LocalDate startDate;
+    private LocalDate endDate;
+
+    // Timestamp of determination
+    private LocalDateTime determinedAt;
+}

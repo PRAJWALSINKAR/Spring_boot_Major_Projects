@@ -1,0 +1,18 @@
+package prajwal.in.repo;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import prajwal.in.entity.EligibilityResult;
+
+@Repository
+public interface EligibilityResultRepo extends JpaRepository<EligibilityResult, Long> {
+
+    // Find results by case number
+    List<EligibilityResult> findByCaseNumber(String caseNumber);
+
+    // Optional: Find by case number & plan
+    EligibilityResult findByCaseNumberAndPlanName(String caseNumber, String planName);
+}

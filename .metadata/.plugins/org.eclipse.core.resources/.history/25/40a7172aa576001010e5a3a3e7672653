@@ -1,0 +1,10 @@
+package prajwal.in.service;
+
+import prajwal.in.entity.BenefitTransaction;
+import java.util.List;
+
+public interface BenefitTransactionService {
+    List<BenefitTransactionDTO> getTransactionsByCaseNumber(String caseNumber);
+    void sendMoneyToAllApproved();
+}
+}

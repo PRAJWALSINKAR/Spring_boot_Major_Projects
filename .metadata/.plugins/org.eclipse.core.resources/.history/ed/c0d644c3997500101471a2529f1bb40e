@@ -1,0 +1,22 @@
+<form th:action="@{/citizen-plan/apply}" method="post">
+    <!-- Case Number -->
+    <div class="mb-3">
+        <label class="form-label">Case Number</label>
+        <input type="text" name="caseNumber" class="form-control"
+               th:value="${caseNumber}" readonly>
+    </div>
+
+    <!-- Plan Selection -->
+    <div class="mb-3">
+        <label class="form-label">Select Plan</label>
+        <select name="planName" class="form-select" required>
+            <option value="" disabled selected>-- Select a Plan --</option>
+            <option th:each="plan : ${plans}" th:value="${plan.planName}"
+                    th:text="|${plan.planName} (${plan.planCategory})|"></option>
+        </select>
+    </div>
+
+    <div class="text-end">
+        <button type="submit" class="btn btn-primary">Next →</button>
+    </div>
+</form>
