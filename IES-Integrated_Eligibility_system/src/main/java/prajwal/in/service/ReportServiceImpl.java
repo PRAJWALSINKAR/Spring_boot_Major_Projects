@@ -1,0 +1,53 @@
+package prajwal.in.service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import prajwal.in.dto.ReportRowDTO;
+import prajwal.in.repo.ReportRepository;
+import prajwal.in.dto.SearchRequest;
+
+@Service
+public class ReportServiceImpl implements ReportService {
+
+    @Autowired
+    private ReportRepository repo;
+
+    @Override
+    public List<ReportRowDTO> searchReport(SearchRequest req) {
+        List<Object[]> rawData = repo.searchReportRaw(
+            req.getGender(),
+            req.getPlanName(),
+            req.getPlanStatus(),
+            req.getStartDate(),
+            req.getEndDate()
+        );
+
+        List<ReportRowDTO> dtos = new ArrayList<>();
+        for (Object[] row : rawData) {
+            dtos.add(new ReportRowDTO(
+                ((Number) row[0]).longValue(),           // serial no
+                (String) row[1],                         // full name
+                (String) row[2],                         // email
+                (String) row[3],                         // mobile number
+                (String) row[4],                         // gender
+                (String) row[5],                         // ssn
+                row[6] != null ? ((Number) row[6]).doubleValue() : 0.0 // total benefit
+            ));
+        }
+        return dtos;
+    }
+
+    @Override
+    public List<String> getPlanNames() {
+        return repo.getPlanNames();
+    }
+
+    @Override
+    public List<String> getPlanStatuses() {
+        return repo.getPlanStatuses();
+    }
+}

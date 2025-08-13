@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>Create Application</title>
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+body { background: #f7f7fb; }
+
+/* Sidebar styling from dashboard */
+.sidebar {
+    width: 70px;
+    height: 100vh;
+    position: fixed;
+    background-color: #343a40;
+    display: flex;
+    flex-direction: column;
+    padding-top: 1rem;
+    z-index: 999;
+}
+.sidebar ul { margin: 0; padding: 0; list-style: none; }
+.sidebar li { position: relative; }
+.sidebar .nav-link {
+    display: flex; justify-content: center; align-items: center;
+    height: 54px; color: white; font-size: 22px; text-decoration: none;
+}
+.sidebar .nav-link:hover { background-color: #495057; }
+
+/* Floating Submenu */
+.submenu {
+    display: none;
+    position: fixed;
+    background: #343a40;
+    min-width: 220px;
+    box-shadow: 0 8px 24px rgba(44,62,80,0.2);
+    border-radius: 0 8px 8px 0;
+    overflow: hidden;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+}
+.submenu.show { display: block; opacity: 1; pointer-events: auto; }
+.submenu a {
+    display: block; color: white; padding: 12px 18px;
+    text-decoration: none; border-bottom: 1px solid #41464b;
+}
+.submenu a:last-child { border-bottom: none; }
+.submenu a:hover { background-color: #495057; }
+
+/* Main form container */
+main { margin-left: 70px; padding: 20px; }
+.form-container {
+    max-width: 700px; margin: 48px auto; background: #fff;
+    padding: 32px 36px 24px; border-radius: 10px;
+    box-shadow: 0 2px 20px 0 #dedede41;
+}
+.form-title { font-weight: bold; margin-bottom: 24px; text-align: center; }
+label { font-weight: 500; }
+.error-msg { color: red; font-size: 14px; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- Top Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+<button onclick="history.back()" class="btn btn-outline-light me-2"
+title="Go Back">&#8592;</button>
+<a class="navbar-brand d-flex align-items-center" href="#">
+    <img th:src="@{/images/myName-Logo.png}" alt="Logo" width="40" height="40" class="me-2">
+    <span>IES</span>
+</a>
+<div class="ms-auto d-flex gap-2">
+    <a href="/dashboard" class="btn btn-light btn-sm">Dashboard</a>
+    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+</div>
+</nav>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+    <ul class="nav flex-column">
+        <li><a href="/dashboard" class="nav-link" title="Dashboard"><i class="fa fa-home"></i></a></li>
+        <li class="has-popup" data-popup="appreg-popup">
+            <a class="nav-link" title="Application Registration"><i class="fa fa-book"></i></a>
+        </li>
+        <li class="has-popup" data-popup="datacollection-popup">
+            <a class="nav-link" title="Data Collection"><i class="fa fa-folder-open"></i></a>
+        </li>
+        <li th:if="${session.role == 'ADMIN'}" class="has-popup" data-popup="admin-popup">
+            <a class="nav-link" title="Admin"><i class="fa fa-user-shield"></i></a>
+        </li>
+    </ul>
+</nav>
+
+<!-- Submenu popups -->
+<div id="appreg-popup" class="submenu">
+    <a href="/application/create">Create Application</a>
+    <a href="/application/view">View Applications</a>
+</div>
+<div id="datacollection-popup" class="submenu">
+    <a href="/dc/income-manual"><i class="fa fa-money-bill-wave me-2"></i>Income Details</a>
+    <a href="/dc/education-manual"><i class="fa fa-graduation-cap me-2"></i>Education Details</a>
+    <a href="/dc/kids-manual"><i class="fa fa-child me-2"></i>Kids Details</a>
+</div>
+<div id="admin-popup" class="submenu">
+    <a href="/caseworker/register-form">Create Account</a>
+    <a href="/caseworker/view">View Accounts</a>
+    <a href="/plan/create-form">Create Plan</a>
+    <a href="/plan/view">View Plans</a>
+</div>
+
+<!-- Main Content -->
+<main>
+    <div class="form-container">
+        <div class="form-title">Create Application</div>
+        <form th:action="@{/application/save}" method="post"
+              th:object="${citizen}" id="citizenForm">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" th:field="*{fullName}" class="form-control" id="fullName" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="email">Email ID</label>
+                    <input type="email" th:field="*{email}" class="form-control" id="email" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="mobileNumber">Mobile Number</label>
+                    <input type="text" th:field="*{mobileNumber}" class="form-control" id="mobileNumber" required>
+                </div>
+                <div class="col-md-6">
+                    <label>Gender</label>
+                    <div class="form-check form-check-inline ms-2">
+                        <input class="form-check-input" type="radio" th:field="*{gender}" id="male" value="Male" required>
+                        <label class="form-check-label" for="male">Male</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" th:field="*{gender}" id="female" value="Female" required>
+                        <label class="form-check-label" for="female">Female</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="dob">DOB</label>
+                    <input type="date" th:field="*{dob}" class="form-control" id="dob" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="ssn">SSN</label>
+                    <input type="text" th:field="*{ssn}" class="form-control" id="ssn" required>
+                    <div id="ssnError" class="error-msg"></div>
+                </div>
+            </div>
+            <div class="mt-4 text-end">
+                <button type="submit" class="btn btn-primary px-4">Submit</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Sidebar popup logic
+document.querySelectorAll('.has-popup').forEach(function(li){
+    li.addEventListener('mouseenter', function(){
+        document.querySelectorAll('.submenu.show').forEach(x => x.classList.remove('show'));
+        var rect = li.getBoundingClientRect();
+        var popupId = li.getAttribute('data-popup');
+        var popup = document.getElementById(popupId);
+        popup.style.top = rect.top + "px";
+        popup.style.left = rect.right + "px";
+        popup.classList.add('show');
+    });
+    li.addEventListener('mouseleave', function(){
+        var popup = document.getElementById(li.getAttribute('data-popup'));
+        setTimeout(function(){ if (!popup.matches(':hover')) { popup.classList.remove('show'); } }, 100);
+    });
+});
+document.querySelectorAll('.submenu').forEach(function(menu){
+    menu.addEventListener('mouseleave', function(){ menu.classList.remove('show'); });
+    menu.addEventListener('mouseenter', function(){ menu.classList.add('show'); });
+});
+
+// SSN validation
+document.getElementById("citizenForm").addEventListener("submit", function(e) {
+    const ssnField = document.getElementById("ssn");
+    const errorDiv = document.getElementById("ssnError");
+    const ssn = ssnField.value.trim();
+    errorDiv.textContent = "";
+    if (!/^\d{8}$/.test(ssn)) {
+        errorDiv.textContent = "SSN must be exactly 8 digits.";
+        ssnField.focus(); e.preventDefault(); return;
+    }
+    if (!ssn.startsWith("123")) {
+        errorDiv.textContent = "Application not acceptable. You are not a citizen of Rhode Island.";
+        ssnField.focus(); e.preventDefault();
+    }
+});
+</script>
+</body>
+</html>

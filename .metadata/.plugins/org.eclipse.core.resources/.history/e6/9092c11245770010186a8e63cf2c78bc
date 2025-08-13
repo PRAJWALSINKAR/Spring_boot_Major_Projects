@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Edit Caseworker</title>
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+<style>
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', sans-serif;
+    position: relative;
+}
+.navbar {
+    background-color: #343a40 !important;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1001;
+    width: 100%;
+}
+.navbar-brand img {
+    height: 40px;
+    width: 40px;
+}
+/* Sidebar styling like all updated pages */
+.sidebar {
+    width: 70px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #343a40;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+.sidebar ul {
+    list-style: none;
+    margin: 0;
+    padding: 60px 0 0 0; /* begin after navbar height */
+}
+.sidebar li { position: relative; }
+.sidebar .nav-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 54px;
+    font-size: 22px;
+    color: white;
+    text-decoration: none;
+}
+.sidebar .nav-link:hover { background-color: #495057; }
+.submenu {
+    display: none;
+    position: fixed;
+    background: #343a40;
+    min-width: 220px;
+    box-shadow: 0 8px 24px rgba(44,62,80,0.2);
+    border-radius: 0 8px 8px 0;
+    overflow: hidden;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+}
+.submenu.show { display: block; opacity: 1; pointer-events: auto; }
+.submenu a {
+    display: block;
+    padding: 12px 18px;
+    color: white;
+    text-decoration: none;
+    border-bottom: 1px solid #41464b;
+}
+.submenu a:last-child { border-bottom: none; }
+.submenu a:hover { background: #495057; }
+/* Main form content starts after sidebar and below navbar */
+main {
+    margin-left: 70px;
+    padding: 20px;
+    padding-top: 80px; /* enough space below fixed navbar */
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR with Back Button, Logo, Right Actions -->
+<nav class="navbar navbar-expand-lg navbar-dark px-3">
+    <div class="d-flex align-items-center">
+        <!-- Back Button -->
+        <button onclick="history.back()" class="btn btn-outline-light me-3" title="Go Back">&#8592;</button>
+        <!-- Logo -->
+        <a class="navbar-brand d-flex align-items-center" href="#">
+            <img th:src="@{/images/myName-Logo.png}" alt="Logo" class="me-2" />
+            <span>IES</span>
+        </a>
+    </div>
+    <div class="ms-auto d-flex gap-2">
+        <a href="/dashboard" class="btn btn-light btn-sm">Dashboard</a>
+        <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+    </div>
+</nav>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+    <ul class="nav flex-column">
+        <li><a href="/dashboard" class="nav-link" title="Dashboard"><i class="fa fa-home"></i></a></li>
+        <li class="has-popup" data-popup="appreg-popup">
+            <a class="nav-link" title="Application Registration"><i class="fa fa-book"></i></a>
+        </li>
+        <li class="has-popup" data-popup="datacollection-popup">
+            <a class="nav-link" title="Data Collection"><i class="fa fa-folder-open"></i></a>
+        </li>
+        <li class="has-popup" data-popup="admin-popup">
+            <a class="nav-link" title="Admin"><i class="fa fa-user-shield"></i></a>
+        </li>
+    </ul>
+</nav>
+<!-- Submenus -->
+<div id="appreg-popup" class="submenu">
+    <a href="/application/create">Create Application</a>
+    <a href="/application/view">View Applications</a>
+</div>
+<div id="datacollection-popup" class="submenu">
+    <a href="/dc/income-manual">Income Details</a>
+    <a href="/dc/education-manual">Education Details</a>
+    <a href="/dc/kids-manual">Kids Details</a>
+</div>
+<div id="admin-popup" class="submenu">
+    <a href="/caseworker/register-form">Create Account</a>
+    <a href="/caseworker/view">View Accounts</a>
+    <a href="/plan/create-form">Create Plan</a>
+    <a href="/plan/view">View Plans</a>
+</div>
+
+<!-- Main Content -->
+<main>
+    <div class="container mt-4">
+        <h2>Edit Caseworker</h2>
+        <form th:action="@{/caseworker/update}" th:object="${caseworker}" method="post">
+            <input type="hidden" th:field="*{id}" />
+            <div class="mb-3">
+                <label>Name:</label>
+                <input type="text" th:field="*{name}" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label>Email:</label>
+                <input type="email" th:field="*{email}" class="form-control" required readonly />
+            </div>
+            <div class="mb-3">
+                <label>Phone Number:</label>
+                <input type="text" th:field="*{phoneNumber}" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label>Gender:</label>
+                <select th:field="*{gender}" class="form-select" required>
+                    <option value="">Select</option>
+                    <option value="Male" th:selected="*{gender} == 'Male'">Male</option>
+                    <option value="Female" th:selected="*{gender} == 'Female'">Female</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>DOB:</label>
+                <input type="date" th:field="*{dob}" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label>SSN:</label>
+                <input type="text" th:field="*{ssn}" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label>Account Status:</label>
+                <input type="text" th:field="*{accStatus}" class="form-control" readonly />
+            </div>
+            <button type="submit" class="btn btn-success">Update</button>
+            <a href="/dashboard" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Sidebar submenu logic
+document.querySelectorAll('.has-popup').forEach(function(li){
+    li.addEventListener('mouseenter', function(){
+        document.querySelectorAll('.submenu.show').forEach(e=>e.classList.remove('show'));
+        var popup=document.getElementById(li.getAttribute('data-popup'));
+        var rect=li.getBoundingClientRect();
+        popup.style.top=rect.top+"px";
+        popup.style.left=rect.right+"px";
+        popup.classList.add('show');
+    });
+    li.addEventListener('mouseleave', function(){
+        var popup=document.getElementById(li.getAttribute('data-popup'));
+        setTimeout(function(){ if(!popup.matches(':hover')) popup.classList.remove('show'); }, 100);
+    });
+});
+document.querySelectorAll('.submenu').forEach(function(menu){
+    menu.addEventListener('mouseleave', function(){menu.classList.remove('show');});
+    menu.addEventListener('mouseenter', function(){menu.classList.add('show');});
+});
+</script>
+</body>
+</html>

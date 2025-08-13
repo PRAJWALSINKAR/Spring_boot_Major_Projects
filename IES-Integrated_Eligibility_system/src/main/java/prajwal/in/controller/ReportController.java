@@ -1,0 +1,66 @@
+package prajwal.in.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletResponse;
+import prajwal.in.dto.ReportRowDTO;
+import prajwal.in.dto.SearchRequest;
+import prajwal.in.service.ReportService;
+import prajwal.in.util.ExcelGenerator;
+import prajwal.in.util.PdfGenerator;
+
+@Controller
+@RequestMapping("/report")
+public class ReportController {
+
+    @Autowired
+    private ReportService service;
+
+    @Autowired
+    private ExcelGenerator excelGen;
+
+    @Autowired
+    private PdfGenerator pdfGen;
+
+    /** Load Report Page - Empty Results **/
+    @GetMapping("/ui")
+    public String loadReportPage(Model model) {
+        model.addAttribute("search", new SearchRequest()); // empty filters
+        model.addAttribute("plans", service.getPlanNames());
+        model.addAttribute("statuses", service.getPlanStatuses());
+        model.addAttribute("results", List.of()); // empty results
+        return "report-search";
+    }
+
+    /** Perform Search **/
+    @PostMapping("/search")
+    public String search(@ModelAttribute("search") SearchRequest req, Model model) {
+        List<ReportRowDTO> results = service.searchReport(req);
+        model.addAttribute("search", req);
+        model.addAttribute("plans", service.getPlanNames());
+        model.addAttribute("statuses", service.getPlanStatuses());
+        model.addAttribute("results", results);
+        return "report-search";
+    }
+
+    /** Excel Export **/
+    @PostMapping("/export-excel")
+    public void exportExcel(@ModelAttribute("search") SearchRequest req, HttpServletResponse response) throws Exception {
+        response.setContentType("application/octet-stream");
+        response.addHeader("Content-Disposition", "attachment;filename=benefit-report.xls");
+        excelGen.generate(response, service.searchReport(req));
+    }
+
+    /** PDF Export **/
+    @PostMapping("/export-pdf")
+    public void exportPdf(@ModelAttribute("search") SearchRequest req, HttpServletResponse response) throws Exception {
+        response.setContentType("application/pdf");
+        response.addHeader("Content-Disposition", "attachment;filename=benefit-report.pdf");
+        pdfGen.generate(response, service.searchReport(req));
+    }
+}

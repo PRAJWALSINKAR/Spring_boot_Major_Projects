@@ -6,22 +6,15 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import prajwal.in.entity.Admin;
 import prajwal.in.entity.CaseWorker;
-import prajwal.in.entity.CitizenInfo;
-import prajwal.in.entity.Kid;
-import prajwal.in.service.AdminService;
 import prajwal.in.service.CaseWorkerService;
+import prajwal.in.service.DashboardService;
 import prajwal.in.service.ApplicationService;
 
 import java.util.List;
-import java.util.Map;
 
 @Controller
 public class DashboardController {
-
-    @Autowired
-    private AdminService adminService;
 
     @Autowired
     private CaseWorkerService caseWorkerService;
@@ -29,25 +22,30 @@ public class DashboardController {
     @Autowired
     private ApplicationService applicationService;
 
+    @Autowired
+    private DashboardService dashboardService;
+
     @GetMapping("/dashboard")
     public String dashboard(Model model, HttpSession session) {
+
         String email = (String) session.getAttribute("email");
         String role = (String) session.getAttribute("role");
 
+        // Redirect to login if no session
         if (email == null || role == null) {
-            return "redirect:/login";  // Not logged in, redirect to login
+            return "redirect:/login";
         }
 
         boolean isAdmin = "ADMIN".equals(role);
         model.addAttribute("isAdmin", isAdmin);
         model.addAttribute("userName", session.getAttribute("userName"));
+        model.addAttribute("session", session); // For Thymeleaf conditional role rendering
 
-        // Fetch dashboard stats (same for admin & case worker or customize as per role)
-        Map<String, Object> stats = applicationService.getDashboardStats();
-        model.addAttribute("planCount", stats.get("planCount"));
-        model.addAttribute("citizensApproved", stats.get("citizensApproved"));
-        model.addAttribute("citizensDenied", stats.get("citizensDenied"));
-        model.addAttribute("benefitsGiven", stats.get("benefitsGiven"));
+        // === Fetch Dashboard Stats ===
+        model.addAttribute("planCount", dashboardService.getPlanCount());
+        model.addAttribute("citizensApproved", dashboardService.getCitizensApproved());
+        model.addAttribute("citizensDenied", dashboardService.getCitizensDenied());
+        model.addAttribute("benefitsGiven", dashboardService.getBenefitsGiven());
 
         return "dashboard"; // Thymeleaf dashboard.html
     }
@@ -64,14 +62,14 @@ public class DashboardController {
 
         if ("ADMIN".equals(role)) {
             return applicationService.findAllApplications();
-        } else if ("CASEWORKER".equals(role)) {
+        } 
+        else if ("CASEWORKER".equals(role)) {
             CaseWorker worker = caseWorkerService.findByEmail(email).orElse(null);
             if (worker != null) {
                 return applicationService.findApplicationsByCaseWorkerId(worker.getId());
             }
         }
+
         return List.of();
     }
-
-    
 }

@@ -1,0 +1,60 @@
+package prajwal.in.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletResponse;
+import prajwal.in.dto.ReportRowDTO;
+import prajwal.in.dto.SearchRequest;
+import prajwal.in.service.ReportService;
+import prajwal.in.util.ExcelGenerator;
+import prajwal.in.util.PdfGenerator;
+
+@RestController
+@RequestMapping("/report")
+public class ReportController {
+
+    @Autowired
+    private ReportService service;
+
+    @Autowired
+    private ExcelGenerator excelGen;
+
+    @Autowired
+    private PdfGenerator pdfGen;
+
+    // ---- Dropdown APIs ----
+    @GetMapping("/plans")
+    public List<String> getPlans() {
+        return service.getPlanNames();
+    }
+
+    @GetMapping("/statuses")
+    public List<String> getStatuses() {
+        return service.getPlanStatuses();
+    }
+
+    // ---- Search API ----
+    @PostMapping("/search")
+    public List<ReportRowDTO> search(@RequestBody SearchRequest req) {
+        return service.searchReport(req);
+    }
+
+    // ---- Excel Export ----
+    @PostMapping("/export-excel")
+    public void exportExcel(@RequestBody SearchRequest req, HttpServletResponse response) throws Exception {
+        response.setContentType("application/octet-stream");
+        response.addHeader("Content-Disposition", "attachment;filename=benefit-report.xls");
+        excelGen.generate(response, service.searchReport(req));
+    }
+
+    // ---- PDF Export ----
+    @PostMapping("/export-pdf")
+    public void exportPdf(@RequestBody SearchRequest req, HttpServletResponse response) throws Exception {
+        response.setContentType("application/pdf");
+        response.addHeader("Content-Disposition", "attachment;filename=benefit-report.pdf");
+        pdfGen.generate(response, service.searchReport(req));
+    }
+}

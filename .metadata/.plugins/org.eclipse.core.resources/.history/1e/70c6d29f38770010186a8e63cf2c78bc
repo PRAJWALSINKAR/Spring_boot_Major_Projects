@@ -1,0 +1,49 @@
+package prajwal.in.repo;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import prajwal.in.dto.ReportRowDTO;
+import prajwal.in.entity.CitizenEntity;
+
+public interface ReportRepository extends JpaRepository<CitizenEntity, Long> {
+
+    // ✅ Updated: Use eligibility_result instead of benefit_transaction for complete data
+    @Query(value = """
+        SELECT ROW_NUMBER() OVER (ORDER BY c.full_name) AS serialNo,
+               c.full_name AS fullName,
+               c.email AS email,
+               c.mobile_number AS mobileNumber,
+               c.gender AS gender,
+               c.ssn AS ssn,
+               COALESCE(SUM(er.benefit_amount),0) AS totalBenefitAmount
+        FROM citizen c
+        JOIN eligibility_result er ON er.case_number = c.case_number
+        WHERE (:gender IS NULL OR c.gender = :gender)
+          AND (:planName IS NULL OR er.plan_name = :planName)
+          AND (:planStatus IS NULL OR er.plan_status = :planStatus)
+          AND (:startDate IS NULL OR er.start_date >= :startDate)
+          AND (:endDate IS NULL OR er.end_date <= :endDate)
+        GROUP BY c.full_name, c.email, c.mobile_number, c.gender, c.ssn
+        ORDER BY c.full_name
+        """, nativeQuery = true)
+    List<Object[]> searchReportRaw(
+        @Param("gender") String gender,
+        @Param("planName") String planName,
+        @Param("planStatus") String planStatus,
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate
+    );
+
+    // ✅ Updated: Plan names from eligibility_result (covers all)
+    @Query(value = "SELECT DISTINCT plan_name FROM eligibility_result WHERE plan_name IS NOT NULL", nativeQuery = true)
+    List<String> getPlanNames();
+
+    // ✅ Updated: Plan statuses from eligibility_result (Approved, Denied, Not Applied, etc.)
+    @Query(value = "SELECT DISTINCT plan_status FROM eligibility_result WHERE plan_status IS NOT NULL", nativeQuery = true)
+    List<String> getPlanStatuses();
+}

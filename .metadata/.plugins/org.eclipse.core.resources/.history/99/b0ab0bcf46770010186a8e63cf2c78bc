@@ -1,0 +1,41 @@
+<!-- ... head content unchanged except sidebar styles updated -->
+<nav class="sidebar">
+  <ul class="nav flex-column">
+    <li><a href="/dashboard" class="nav-link" title="Dashboard"><i class="fa fa-home"></i></a></li>
+    <li class="has-popup" data-popup="appreg-popup"><a class="nav-link" title="Application Registration"><i class="fa fa-book"></i></a></li>
+    <li class="has-popup" data-popup="datacollection-popup"><a class="nav-link" title="Data Collection"><i class="fa fa-folder-open"></i></a></li>
+    <li class="has-popup" data-popup="eligibility-popup"><a class="nav-link" title="Eligibility Determination"><i class="fa fa-check-circle"></i></a></li>
+    <li class="has-popup" data-popup="benefit-popup"><a class="nav-link" title="Benefit Issuance"><i class="fa fa-dollar-sign"></i></a></li>
+    <li class="has-popup" data-popup="report-popup"><a class="nav-link" title="Reports"><i class="fa fa-chart-bar"></i></a></li>
+    <li th:if="${session.role == 'ADMIN'}" class="has-popup" data-popup="admin-popup">
+      <a class="nav-link active" title="Admin"><i class="fa fa-user-shield"></i></a>
+    </li>
+  </ul>
+</nav>
+
+<!-- Submenus (copied from dashboard full) -->
+<div id="appreg-popup" class="submenu">
+  <a href="/application/create">Create Application</a>
+  <a href="/application/view">View Applications</a>
+</div>
+<div id="datacollection-popup" class="submenu">
+  <a href="/dc/income-manual"><i class="fa fa-money-bill-wave me-2"></i>Income Details</a>
+  <a href="/dc/education-manual"><i class="fa fa-graduation-cap me-2"></i>Education Details</a>
+  <a href="/dc/kids-manual"><i class="fa fa-child me-2"></i>Kids Details</a>
+</div>
+<div id="eligibility-popup" class="submenu">
+  <a href="/eligibility/check"><i class="fa fa-search me-2"></i> Eligibility Check</a>
+</div>
+<div id="benefit-popup" class="submenu">
+  <a href="/bi/manage"><i class="fa fa-table me-2"></i> View Transactions</a>
+</div>
+<div id="report-popup" class="submenu">
+  <a href="/report/ui"><i class="fa fa-file-alt me-2"></i> Benefit Report</a>
+</div>
+<div id="admin-popup" class="submenu">
+  <a href="/caseworker/register-form">Create Account</a>
+  <a href="/caseworker/view">View Accounts</a>
+  <a href="/plan/create-form">Create Plan</a>
+  <a href="/plan/view">View Plans</a>
+  <a href="/bi/send-money"><i class="fa fa-bolt me-2"></i> Send Money</a>
+</div>
